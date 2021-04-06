@@ -1,0 +1,61 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &9030492606282115732
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9030492606282115734}
+  - component: {fileID: 9030492606282115735}
+  m_Layer: 0
+  m_Name: GridManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9030492606282115734
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9030492606282115732}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1.4327546, y: 0.6746594, z: -7.5905266}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &9030492606282115735
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9030492606282115732}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb8c5f74da82e1c4189d33f6c696e7f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  row: 5
+  col: 5
+  tileSize: 1
+  xOffset: 0.5
+  yOffset: 0.5
+  orbList:
+  - {fileID: 817937506043260565, guid: 3355c0bd3a65d2d44a2ce21cd70f30b2, type: 3}
+  - {fileID: 2496997211664720126, guid: 34c846a2078ec294980deb94c19d83b6, type: 3}
+  - {fileID: 1256467142952101745, guid: eb59cc675ed287442802e8f79cec8327, type: 3}
+  party:
+  - {fileID: 8720410676350050496, guid: c9ef1251fc14b1347bedfc8d74ae219d, type: 3}
+  - {fileID: 310649103896273161, guid: a08b863ccf44e62419efaa97677f4c3d, type: 3}
+  - {fileID: 1552339486826438295, guid: b1f272eba435c6e4fbeb2a40cf291f63, type: 3}
+  selectedAllyCursor: {fileID: 621255469180475566, guid: 118b60aedab86a24a9e6b86cb855cfe7, type: 3}
+  arrowIndicator: {fileID: 9164340341054672997, guid: cfc403fd534c67e4b8b3b687476bc45c, type: 3}
+  stepsLeft: {fileID: 0}
