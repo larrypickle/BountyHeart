@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Ally : Orb
 {
-    private int maxMovement;
+    public int maxMovement;
     public float healthPoints;
     public enum moveStates
     {
@@ -13,7 +13,7 @@ public class Ally : Orb
         Moved,
         Wait
     }
-
+    [HideInInspector]
     public moveStates moveState;
     public void Move()
     {

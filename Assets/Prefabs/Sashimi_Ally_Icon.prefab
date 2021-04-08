@@ -10,7 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1552339486826438293}
   - component: {fileID: 1552339486826438292}
-  - component: {fileID: 4758739767461555534}
+  - component: {fileID: 3865615234709988863}
+  - component: {fileID: -6631730030634772847}
   m_Layer: 0
   m_Name: Sashimi_Ally_Icon
   m_TagString: Ally
@@ -83,7 +84,33 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &4758739767461555534
+--- !u!61 &3865615234709988863
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1552339486826438295}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 11, y: 11}
+    newSize: {x: 11, y: 11}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  serializedVersion: 2
+  m_Size: {x: 11, y: 11}
+  m_EdgeRadius: 0
+--- !u!114 &-6631730030634772847
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -92,7 +119,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 1552339486826438295}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d9e81a6f1be5c3c4398f046662187b05, type: 3}
+  m_Script: {fileID: 11500000, guid: 49e074720f4ffc04b90053a107484e6e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   orbType: 3
+  maxMovement: 2
+  healthPoints: 3
+  moveState: 0
