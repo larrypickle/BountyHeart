@@ -11,7 +11,8 @@ public class Orb : MonoBehaviour
         Shield,
         Heal,
         Ally,
-        Enemy
+        Enemy,
+        Empty
     }
     public OrbType orbType;
     //public Sprite sprite;

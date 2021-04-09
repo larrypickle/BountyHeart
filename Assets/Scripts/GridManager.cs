@@ -33,11 +33,13 @@ public class GridManager : MonoBehaviour
     //character movement
     [Header("Character Movement")]
     private bool characterSelected;
+    public float moveDelay;
     private GameObject selectedAlly;
     private GameObject lastSelected;
     public List<GameObject> party;
     private Stack<GameObject> movementOrbs;
     private int tilesMoved;
+    private bool moving;
     //ui elements for character movement
     [Header("UI Elements for character movement")]
     public GameObject selectedAllyCursor;
@@ -46,12 +48,15 @@ public class GridManager : MonoBehaviour
     private Stack<GameObject> arrowIndicators;
     public TextMeshProUGUI stepsLeft;
 
+    [Header("Messy Implementation for Orbs falling")]
+    public GameObject emptyOrb;
 
 
     // Start is called before the first frame update
     void Start()
     {
         //instantiation
+        moving = false;
         movementOrbs = new Stack<GameObject>();
         selectedAlly = null;
         CreateGrid();
@@ -111,7 +116,7 @@ public class GridManager : MonoBehaviour
 
         }
         
-        if (characterSelected)
+        if (characterSelected && !moving)
         {
             if (gamePhase == GamePhase.Player)
             {
@@ -127,10 +132,15 @@ public class GridManager : MonoBehaviour
                         if(move_Orbs != lastSelected)
                         {
                             //only build move when the tile ur finger is on is a different one
-                            if (isNeighbour(move_Orbs, lastSelected))
+                            if(movementOrbs.Peek() != null)
                             {
-                                buildMove(move_Orbs);
+                                if (isNeighbour(move_Orbs, movementOrbs.Peek()))
+                                {
+                                    buildMove(move_Orbs);
+                                }
                             }
+                            
+                            
                         }
                         
                     }
@@ -145,8 +155,7 @@ public class GridManager : MonoBehaviour
             {
                 Debug.Log("Move executed");
 
-                ExecuteMove();
-
+                StartCoroutine(ExecuteMove());
             }
 
         }
@@ -247,19 +256,22 @@ public class GridManager : MonoBehaviour
         //Orb temp = o;
         Vector2Int swapPosition = oSwap.getPosition();
 
-        grid[position.x, position.y] = orb;
-        grid[swapPosition.x, swapPosition.y] = orbSwap;
+        grid[position.x, position.y] = orbSwap;
+        grid[swapPosition.x, swapPosition.y] = orb;
+        Debug.Log("Swapping orbs | before swap | orb 1 " + orb.name + "position: " + o.getPosition() + " orb 2 " + orbSwap.name + "position: " + oSwap.getPosition());
+
         oSwap.SetPosition(position.x, position.y);
         o.SetPosition(swapPosition.x, swapPosition.y);
 
         Vector3 tempPosition = orb.transform.position;
         orb.transform.position = orbSwap.transform.position;
         orbSwap.transform.position = tempPosition;
-
-        CheckMatch(oSwap);
+        Debug.Log("Swapping orbs | after swap | orb 1 " + orb.name + "position: " + o.getPosition() + " orb 2 " + orbSwap.name + "position: " + oSwap.getPosition());
+        //CheckMatch();
 
 
     }
+
 
     public void CheckSides(Orb o)
     {
@@ -267,8 +279,179 @@ public class GridManager : MonoBehaviour
         //grid[position.x, position.y]
     }
 
-    private void CheckMatch(Orb orb)
+    private void CheckMatch()
     {
+        Debug.Log("Checking match");
+        HashSet<GameObject> matchedTiles = new HashSet<GameObject>();
+        for(int i = 0; i < row; i++)
+        {
+            for(int j = 0; j < col; j++)
+            {
+
+                Orb o = grid[i, j].GetComponent<Orb>();
+                Orb.OrbType type = o.orbType;
+                if(o.orbType == Orb.OrbType.Ally)
+                {
+                    continue;
+                }
+                List<GameObject> horizontalMatches = FindColumnMatchForTile(i, j, type);
+                if(horizontalMatches.Count >= 2)
+                {
+                    matchedTiles.UnionWith(horizontalMatches);
+                    //Debug.Log("Adding into match: " + grid[i, j].name + " at " + grid[i, j].transform.position + "at " + i + "," + j);
+                    matchedTiles.Add(grid[i, j]);
+                }
+                List<GameObject> verticalMatches = FindRowMatchForTile(i, j, type);
+                if(verticalMatches.Count >= 2)
+                {
+                    matchedTiles.UnionWith(verticalMatches);
+                    //Debug.Log("Adding into match: " + grid[i, j].name + " at " + grid[i, j].transform.position + "at " + i + "," + j);
+                    matchedTiles.Add(grid[i, j]);
+                }
+
+            }
+        }
+        
+        foreach(GameObject g in matchedTiles)
+        {
+            //Debug.Log("Destroying object: " + g.name + " at " + g.transform.position);
+            Vector2Int pos = g.GetComponent<Orb>().getPosition();
+            grid[pos.x, pos.y] = emptyOrb;
+            grid[pos.x, pos.y].GetComponent<Orb>().SetPosition(pos.x, pos.y);
+            Destroy(g);
+        }
+    }
+    List<GameObject> FindColumnMatchForTile(int x, int y, Orb.OrbType type)
+    {
+        List<GameObject> matches = new List<GameObject>();
+        for(int i = x + 1; i < col; i++)
+        {
+            GameObject nextColumn = grid[i, y];
+            //Debug.Log("Horizontal match working: " + nextColumn.name + " orbtype: " + nextColumn.GetComponent<Orb>().orbType + "position: " + i + ", " + y + "match count: " + matches.Count);
+
+            if (nextColumn.GetComponent<Orb>().orbType != type)
+            {
+                break;
+            }
+            matches.Add(nextColumn);
+            //Debug.Log("Next horizontal matching: " + nextColumn.name + " orbtype: " + nextColumn.GetComponent<Orb>().orbType + "position: " + i + ", " + y + "match count: " + matches.Count);
+
+        }
+        return matches;
+    }
+
+    List<GameObject> FindRowMatchForTile(int x, int y, Orb.OrbType type)
+    {
+        List<GameObject> matches = new List<GameObject>();
+        for (int i = y + 1; i < row; i++)
+        {
+            GameObject nextRow = grid[x, i];
+            //Debug.Log("Vertical match working: " + nextRow.name + " orbType: " + nextRow.GetComponent<Orb>().orbType + "position: " + x + ", " + i + "match count: " + matches.Count);
+
+            if (nextRow.GetComponent<Orb>().orbType != type)
+            {
+                break;
+            }
+
+            matches.Add(nextRow);
+            //Debug.Log("Next vertical matching: " + nextRow.name + " orbType: " + nextRow.GetComponent<Orb>().orbType + "position: " + x + ", " + i + "match count: " + matches.Count);
+
+        }
+        return matches;
+    }
+
+
+    private IEnumerator FillHoles()
+    {
+        
+        Debug.Log("Filling holes");
+        for(int i = 0; i < row; i++)
+        {
+            for(int j = 0; j < col; j++)
+            {
+                if (grid[i,j] == emptyOrb)
+                {
+                    Debug.Log("Empty space detected: " + i + ", " + j);
+                    yield return StartCoroutine(Skyfall(i, j));
+                    //break;
+                    
+
+                }
+            }
+        }
+        StartCoroutine(FillRemaining());
+
+        //FillRemaining();
+    }
+    private IEnumerator Skyfall(int x, int yStart)
+    {
+        int nullCount = 0;
+        List<GameObject> orbs = new List<GameObject>();
+        for (int y = yStart; y < col - 1; y++)
+        {
+            //yield return new WaitForSeconds(moveDelay);
+            //Debug.Log("Object skyfalling: " + grid[i, j + 1].name + "position: " + grid[i, j + 1].transform.position);
+            //Debug.Log("Why does ally not work: " + falling.name);
+            //GameObject empty = grid[i, j];
+            //TODO BUGGED
+
+            if (grid[x, y] = emptyOrb)
+            {
+                nullCount++;
+            }
+            orbs.Add(grid[x, y]);
+        }
+        //PLEASE HELP HOLY SHIT
+        for (int i = 0; i < nullCount; i++)
+        {
+            yield return new WaitForSeconds(moveDelay);
+            for(int j = 0; j < orbs.Count - 1; j++)
+            {
+                GameObject temp = orbs[j];
+                Orb tempO = temp.GetComponent<Orb>();
+                //shallow copy - orbs[j] is now same as orbs[j + 1] but wants to be orb[j+1] at position of orbs[j];
+                orbs[j] = orbs[j + 1];
+                orbs[j].GetComponent<Orb>().SetPosition(tempO.getPosition().x, tempO.getPosition().y);
+                orbs[j].transform.position = temp.transform.position;
+                //orbs[j + 1].SetActive(false);
+                orbs[j + 1] = emptyOrb;
+            }
+        }
+        
+        /*GameObject falling = grid[i, j + 1];
+        grid[i, j + 1] = emptyOrb;
+        falling.transform.position = new Vector2(i * tileSize + xOffset, j * tileSize + yOffset);
+        falling.GetComponent<Orb>().SetPosition(i, j);
+        grid[i, j] = falling;
+        Debug.Log("grid[i,j]: " + grid[i, j].name);
+        */
+
+        //grid[i, j + 1] = emptyOrb;
+    }
+
+    private IEnumerator FillRemaining()
+    {
+        for(int x = 0; x < row; x++)
+        {
+            for (int y = 0; y < col; y++)
+            {
+                if (grid[x, y] == emptyOrb)
+                {
+                    yield return new WaitForSeconds(moveDelay);
+
+                    Vector3 position = new Vector3(x * tileSize + xOffset, y * tileSize + yOffset);
+                    GameObject newTile = (GameObject)Instantiate(orbList[Random.Range(0, orbList.Count)], position, Quaternion.identity);
+                    Orb orb = newTile.GetComponent<Orb>();
+                    orb.SetPosition(x, y);
+
+                    //new position
+                    grid[x, y] = newTile;
+
+                }
+            }
+            
+        }
+        ResetValues();
 
     }
 
@@ -280,7 +463,7 @@ public class GridManager : MonoBehaviour
         
         if (hit)
         {
-            Debug.Log("Hit object: " + hit.transform.gameObject.name);
+            Debug.Log("Hit object: " + hit.transform.gameObject.name + "Grid[i,j]: " + hit.transform.gameObject.GetComponent<Orb>().getPosition() + "Orb type: " + hit.transform.gameObject.GetComponent<Orb>().orbType);
 
             if (hit.transform.gameObject.CompareTag("Ally"))
             {
@@ -324,6 +507,8 @@ public class GridManager : MonoBehaviour
     }
     private void buildMove(GameObject move_Orbs)
     {
+        //CHANGE THIS 
+        //should add positions to a list and then go thru that list of positions to change rather than going thru the actual gameobjects
         //Orb o = move_Orbs.GetComponent<Orb>();
 
         //if its not already a move
@@ -339,12 +524,36 @@ public class GridManager : MonoBehaviour
         }
         else if(movementOrbs.Contains(move_Orbs))
         {
+
             Debug.Log("Build move removing: " + move_Orbs.name + "at " + move_Orbs.transform.position);
             movementOrbs.Pop();
             tilesMoved += 1;
             arrowIndicators.Pop().SetActive(false);
             lastSelected = move_Orbs;
         }
+
+        /*else if(move_Orbs == selectedAlly && tilesMoved > 0)
+        {
+            if(movementOrbs.Count < 3)
+            {
+                Debug.Log("Build move removing: " + move_Orbs.name + "at " + move_Orbs.transform.position);
+                movementOrbs.Pop();
+                tilesMoved += 1;
+                arrowIndicators.Pop().SetActive(false);
+                lastSelected = move_Orbs;
+            }
+            else
+            {
+                //this is to fix the bug where you cannot move overlapping the selected character which u should be able to accomplish
+                Debug.Log("Build move adding: " + move_Orbs.name + "at " + move_Orbs.transform.position);
+                GameObject ai = ObjectPooler.Instance.SpawnFromPool("MoveIndicator", move_Orbs.transform.position, Quaternion.identity);
+                movementOrbs.Push(move_Orbs);
+                tilesMoved -= 1;
+                arrowIndicators.Push(ai);
+                lastSelected = move_Orbs;
+            }
+        }*/
+        
         stepsLeft.SetText(tilesMoved.ToString());
 
         Debug.Log("tiles moved: " + tilesMoved);
@@ -352,37 +561,41 @@ public class GridManager : MonoBehaviour
     }
     
 
-    private void ExecuteMove()
+    private IEnumerator ExecuteMove()
     {
         Debug.Log("Executing move of size " + movementOrbs.Count);
-        if(movementOrbs.Count <= 2)
+        if(movementOrbs.Count < 2)
         {
             ResetValues();
-            return;
+            yield break;
+        }
+        else if(movementOrbs.Count == 2 && movementOrbs.Peek() == selectedAlly)
+        {
+            ResetValues();
+            yield break;
         }
         //movementOrbs.
         ReverseStack();
-        IEnumerator<GameObject> enumerator = movementOrbs.GetEnumerator();
-        while (enumerator.MoveNext())
+        //IEnumerator<GameObject> enumerator = movementOrbs.GetEnumerator();
+        moving = true;
+        while (movementOrbs.Count > 0)
         {
-            Debug.Log("next orb" + enumerator.Current);
-            SwapOrbs(selectedAlly, enumerator.Current);
+            Debug.Log("Swap initiating with: " + movementOrbs.Peek().name + " at " + movementOrbs.Peek().transform.position);
+            SwapOrbs(selectedAlly, movementOrbs.Pop());
+            yield return new WaitForSeconds(0.2f);
+
         }
-        for(int i = 0; i < movementOrbs.Count; i++)
-        {
-            movementOrbs.Pop();
-            selectedAlly.GetComponent<Ally>().moveState = Ally.moveStates.Wait;
-        }
-        
         if (AllWaiting())
         {
             gamePhase = GamePhase.Enemy;
         }
-
+        //CheckMatch();
         //reset all conditions
         selectedAlly.GetComponent<Ally>().moveState = Ally.moveStates.Wait;
-        ResetValues();
-        
+        CheckMatch();
+        StartCoroutine(FillHoles());
+        //FillHoles();
+
     }
     private void ReverseStack()
     {
@@ -395,6 +608,7 @@ public class GridManager : MonoBehaviour
 }
     private void ResetValues()
     {
+        moving = false;
         lastSelected = null;
         selectedAllyCursorInstance.SetActive(false);
         selectedAlly = null;

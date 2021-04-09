@@ -52,6 +52,7 @@ MonoBehaviour:
   - {fileID: 817937506043260565, guid: 3355c0bd3a65d2d44a2ce21cd70f30b2, type: 3}
   - {fileID: 2496997211664720126, guid: 34c846a2078ec294980deb94c19d83b6, type: 3}
   - {fileID: 1256467142952101745, guid: eb59cc675ed287442802e8f79cec8327, type: 3}
+  moveDelay: 0
   party:
   - {fileID: 8720410676350050496, guid: c9ef1251fc14b1347bedfc8d74ae219d, type: 3}
   - {fileID: 310649103896273161, guid: a08b863ccf44e62419efaa97677f4c3d, type: 3}
@@ -59,3 +60,4 @@ MonoBehaviour:
   selectedAllyCursor: {fileID: 621255469180475566, guid: 118b60aedab86a24a9e6b86cb855cfe7, type: 3}
   arrowIndicator: {fileID: 9164340341054672997, guid: cfc403fd534c67e4b8b3b687476bc45c, type: 3}
   stepsLeft: {fileID: 0}
+  emptyOrb: {fileID: 4198416919278954104, guid: a53ee7293c54f034592fd9b8bb36b475, type: 3}
