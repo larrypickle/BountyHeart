@@ -6,6 +6,8 @@ public class Ally : Orb
 {
     public int maxMovement;
     public float healthPoints;
+    public Sprite waiting;
+    public Sprite ready;
     public enum moveStates
     {
         Unselected,
@@ -23,6 +25,15 @@ public class Ally : Orb
     {
         return maxMovement;
     }
-
+    public void Wait()
+    {
+        this.GetComponent<SpriteRenderer>().sprite = waiting;
+        this.moveState = moveStates.Wait;
+    }
+    public void Ready()
+    {
+        this.GetComponent<SpriteRenderer>().sprite = ready;
+        this.moveState = moveStates.Unselected;
+    }
 
 }

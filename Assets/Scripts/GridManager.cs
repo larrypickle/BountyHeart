@@ -398,7 +398,7 @@ public class GridManager : MonoBehaviour
                 if (grid[i,j] == emptyOrb)
                 {
                     Debug.Log("Empty space detected: " + i + ", " + j);
-                    yield return StartCoroutine(Skyfall(i, j));
+                    yield return Skyfall(i, j);
                     break;
                     
 
@@ -585,8 +585,28 @@ public class GridManager : MonoBehaviour
         //if its not already a move
         if (!movementOrbs.Contains(move_Orbs) && tilesMoved > 0)
         {
+            //to calculate what the rotation of the arrow should be
+            GameObject lastMoveOrb = movementOrbs.Peek();
+            Vector3 difference = (move_Orbs.transform.position - lastMoveOrb.transform.position).normalized;
+            Debug.Log("difference: " + difference);
+            Vector3 rotation = new Vector3(0, 0, 0);
+            if(difference.x == -1)
+            {
+                rotation = new Vector3(0, 0, 90);
+            }
+            else if (difference.y == -1)
+            {
+                rotation = new Vector3(0, 0, 180);
+            }
+            else if(difference.x == 1)
+            {
+                rotation = new Vector3(0, 0, 270);
+            }
+            
+            
             Debug.Log("Build move adding: " + move_Orbs.name + "at " + move_Orbs.transform.position);
-            GameObject ai = ObjectPooler.Instance.SpawnFromPool("MoveIndicator", move_Orbs.transform.position, Quaternion.identity);
+            GameObject ai = ObjectPooler.Instance.SpawnFromPool("MoveIndicator", move_Orbs.transform.position, Quaternion.Euler(rotation));
+
             movementOrbs.Push(move_Orbs);
             tilesMoved -= 1;
             arrowIndicators.Push(ai);
@@ -658,6 +678,7 @@ public class GridManager : MonoBehaviour
         }
         if (AllWaiting())
         {
+            Debug.Log("Enemy phase, all allies waiting");
             gamePhase = GamePhase.Enemy;
         }
         //CheckMatch();
@@ -667,6 +688,7 @@ public class GridManager : MonoBehaviour
             g.SetActive(false);
         }
         selectedAlly.GetComponent<Ally>().moveState = Ally.moveStates.Wait;
+
         if (CheckMatch())
         {
             StartCoroutine(FillRemaining());
