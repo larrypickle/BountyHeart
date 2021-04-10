@@ -34,6 +34,7 @@ public class GridManager : MonoBehaviour
     [Header("Character Movement")]
     private bool characterSelected;
     public float moveDelay;
+    public float transitionSpeed;
     private GameObject selectedAlly;
     private GameObject lastSelected;
     public List<GameObject> party;
@@ -247,7 +248,7 @@ public class GridManager : MonoBehaviour
 
     }
 
-    public void SwapOrbs(GameObject orb, GameObject orbSwap)
+    public IEnumerator SwapOrbs(GameObject orb, GameObject orbSwap)
     {
         Orb o = orb.GetComponent<Orb>();
         Orb oSwap = orbSwap.GetComponent<Orb>();
@@ -264,14 +265,29 @@ public class GridManager : MonoBehaviour
         o.SetPosition(swapPosition.x, swapPosition.y);
 
         Vector3 tempPosition = orb.transform.position;
-        orb.transform.position = orbSwap.transform.position;
-        orbSwap.transform.position = tempPosition;
+        //orb.transform.position = orbSwap.transform.position;
+        StartCoroutine(MoveObject(orb, orb.transform.position, orbSwap.transform.position, moveDelay));
+        StartCoroutine(MoveObject(orbSwap, orbSwap.transform.position, tempPosition, moveDelay));
+
+        //orbSwap.transform.position = tempPosition;
         Debug.Log("Swapping orbs | after swap | orb 1 " + orb.name + "position: " + o.getPosition() + " orb 2 " + orbSwap.name + "position: " + oSwap.getPosition());
         //CheckMatch();
+        yield return null;
+
 
 
     }
 
+    IEnumerator MoveObject(GameObject obj, Vector3 source, Vector3 target, float overTime)
+    {
+        float startTime = Time.time;
+        while (Time.time < startTime + overTime)
+        {
+            obj.transform.position = Vector3.Lerp(source, target, (Time.time - startTime) / overTime);
+            yield return null;
+        }
+        obj.transform.position = target;
+    }
 
     public void CheckSides(Orb o)
     {
@@ -279,8 +295,9 @@ public class GridManager : MonoBehaviour
         //grid[position.x, position.y]
     }
 
-    private void CheckMatch()
+    private bool CheckMatch()
     {
+        bool matchFound = false;
         Debug.Log("Checking match");
         HashSet<GameObject> matchedTiles = new HashSet<GameObject>();
         for(int i = 0; i < row; i++)
@@ -300,6 +317,7 @@ public class GridManager : MonoBehaviour
                     matchedTiles.UnionWith(horizontalMatches);
                     //Debug.Log("Adding into match: " + grid[i, j].name + " at " + grid[i, j].transform.position + "at " + i + "," + j);
                     matchedTiles.Add(grid[i, j]);
+                    matchFound = true;
                 }
                 List<GameObject> verticalMatches = FindRowMatchForTile(i, j, type);
                 if(verticalMatches.Count >= 2)
@@ -307,6 +325,7 @@ public class GridManager : MonoBehaviour
                     matchedTiles.UnionWith(verticalMatches);
                     //Debug.Log("Adding into match: " + grid[i, j].name + " at " + grid[i, j].transform.position + "at " + i + "," + j);
                     matchedTiles.Add(grid[i, j]);
+                    matchFound = true;
                 }
 
             }
@@ -320,6 +339,7 @@ public class GridManager : MonoBehaviour
             grid[pos.x, pos.y].GetComponent<Orb>().SetPosition(pos.x, pos.y);
             Destroy(g);
         }
+        return matchFound;
     }
     List<GameObject> FindColumnMatchForTile(int x, int y, Orb.OrbType type)
     {
@@ -363,7 +383,13 @@ public class GridManager : MonoBehaviour
 
     private IEnumerator FillHoles()
     {
-        
+        for (int i = 0; i < row; i++)
+        {
+            for (int j = 0; j < col; j++)
+            {
+                Debug.Log("grid space: " + i + "," + j + ": " + grid[i, j]);
+            }
+        }
         Debug.Log("Filling holes");
         for(int i = 0; i < row; i++)
         {
@@ -373,18 +399,19 @@ public class GridManager : MonoBehaviour
                 {
                     Debug.Log("Empty space detected: " + i + ", " + j);
                     yield return StartCoroutine(Skyfall(i, j));
-                    //break;
+                    break;
                     
 
                 }
             }
         }
-        StartCoroutine(FillRemaining());
+        //StartCoroutine(FillRemaining());
 
         //FillRemaining();
     }
     private IEnumerator Skyfall(int x, int yStart)
     {
+
         int nullCount = 0;
         List<GameObject> orbs = new List<GameObject>();
         for (int y = yStart; y < col - 1; y++)
@@ -395,42 +422,80 @@ public class GridManager : MonoBehaviour
             //GameObject empty = grid[i, j];
             //TODO BUGGED
 
-            if (grid[x, y] = emptyOrb)
+            if (grid[x, y] == emptyOrb)
             {
+                Debug.Log("Null count incremented at " + x + "," + y + " with object " + grid[x, y].name);
                 nullCount++;
             }
-            orbs.Add(grid[x, y]);
+            //orbs.Add(grid[x, y]);
         }
         //PLEASE HELP HOLY SHIT
         for (int i = 0; i < nullCount; i++)
         {
-            yield return new WaitForSeconds(moveDelay);
-            for(int j = 0; j < orbs.Count - 1; j++)
+            for (int y = yStart; y < col - 1; y++)
             {
-                GameObject temp = orbs[j];
-                Orb tempO = temp.GetComponent<Orb>();
-                //shallow copy - orbs[j] is now same as orbs[j + 1] but wants to be orb[j+1] at position of orbs[j];
-                orbs[j] = orbs[j + 1];
-                orbs[j].GetComponent<Orb>().SetPosition(tempO.getPosition().x, tempO.getPosition().y);
-                orbs[j].transform.position = temp.transform.position;
-                //orbs[j + 1].SetActive(false);
-                orbs[j + 1] = emptyOrb;
-            }
-        }
-        
-        /*GameObject falling = grid[i, j + 1];
-        grid[i, j + 1] = emptyOrb;
-        falling.transform.position = new Vector2(i * tileSize + xOffset, j * tileSize + yOffset);
-        falling.GetComponent<Orb>().SetPosition(i, j);
-        grid[i, j] = falling;
-        Debug.Log("grid[i,j]: " + grid[i, j].name);
-        */
+                GameObject falling = grid[x, y + 1];
+                Vector3 dropDown = falling.transform.position - new Vector3(0, tileSize, 0);
+                grid[x, y + 1] = emptyOrb;
+                falling.GetComponent<Orb>().SetPosition(x, y);
+                StartCoroutine(MoveObject(falling, falling.transform.position, dropDown, moveDelay));
+                grid[x, y] = falling;
+                yield return new WaitForSeconds(moveDelay);
 
-        //grid[i, j + 1] = emptyOrb;
+            }
+            /*for (int j = 0; j < orbs.Count - 1; j++)
+            {
+                //initial declarations
+                GameObject tempSwap = orbs[j + 1];
+                Orb tempO = orbs[j].GetComponent<Orb>();
+                Orb swapO = orbs[j + 1].GetComponent<Orb>();
+                Vector2Int tempOPos = tempO.getPosition();
+                Vector2Int swapOPos = swapO.getPosition();
+
+                //shallow copy - orbs[j] is now same as orbs[j + 1] but wants to be orb[j+1] at position of orbs[j];
+                //move the upper object downwards
+                Vector3 dropDown = orbs[j + 1].transform.position - new Vector3(0, tileSize, 0);
+                Debug.Log("Preparing to move object orbs[" + j+1 + "] : "  + orbs[j + 1].name + " to " + dropDown);
+                StartCoroutine(MoveObject(orbs[j + 1], orbs[j + 1].transform.position, dropDown, 0.2f));
+                //have the index in the array orbs contain the info about the its orbs[j+1]
+                orbs[j] = orbs[j + 1];
+                //set the new position
+                orbs[j].GetComponent<Orb>().SetPosition(tempO.getPosition().x, tempO.getPosition().y);
+                //orbs[j].transform.position = Vector3.Lerp(transform.position, temp.transform.position, Time.deltaTime * transitionSpeed);
+                //update the actual grid
+                grid[tempOPos.x, tempOPos.y] = orbs[j];
+
+                //orbs[j + 1].SetActive(false);
+                //set the swapping orb to empty cuz the original orb was empty
+                orbs[j + 1] = emptyOrb;
+                //set the empty orbs transform to the old transform or the now empty orb which is x,y+1
+                orbs[j + 1].transform.position = tempSwap.transform.position;
+                //update the actual grid
+                grid[swapOPos.x, swapOPos.y] = orbs[j + 1];
+            }
+            yield return new WaitForSeconds(moveDelay);
+
+        }*/
+
+            /*GameObject falling = grid[i, j + 1];
+            grid[i, j + 1] = emptyOrb;
+            falling.transform.position = new Vector2(i * tileSize + xOffset, j * tileSize + yOffset);
+            falling.GetComponent<Orb>().SetPosition(i, j);
+            grid[i, j] = falling;
+            Debug.Log("grid[i,j]: " + grid[i, j].name);
+            */
+
+            //grid[i, j + 1] = emptyOrb;
+        }
+
     }
 
     private IEnumerator FillRemaining()
     {
+        yield return FillHoles();
+        List<GameObject> orbTemp = new List<GameObject>();
+        orbTemp.AddRange(orbList);
+
         for(int x = 0; x < row; x++)
         {
             for (int y = 0; y < col; y++)
@@ -438,12 +503,19 @@ public class GridManager : MonoBehaviour
                 if (grid[x, y] == emptyOrb)
                 {
                     yield return new WaitForSeconds(moveDelay);
-
+                    //choose a random orb from orblist 
+                    GameObject random = orbTemp[Random.Range(0, orbTemp.Count)];
                     Vector3 position = new Vector3(x * tileSize + xOffset, y * tileSize + yOffset);
-                    GameObject newTile = (GameObject)Instantiate(orbList[Random.Range(0, orbList.Count)], position, Quaternion.identity);
+                    GameObject newTile = (GameObject)Instantiate(random, position, Quaternion.identity);
                     Orb orb = newTile.GetComponent<Orb>();
                     orb.SetPosition(x, y);
-
+                    //remove the orb from the orbtemp list to ensure variety between spawned orbs
+                    orbTemp.Remove(random);
+                    //refill if no orbs left
+                    if(orbTemp.Count == 0)
+                    {
+                        orbTemp.AddRange(orbList);
+                    }
                     //new position
                     grid[x, y] = newTile;
 
@@ -451,7 +523,6 @@ public class GridManager : MonoBehaviour
             }
             
         }
-        ResetValues();
 
     }
 
@@ -581,8 +652,8 @@ public class GridManager : MonoBehaviour
         while (movementOrbs.Count > 0)
         {
             Debug.Log("Swap initiating with: " + movementOrbs.Peek().name + " at " + movementOrbs.Peek().transform.position);
-            SwapOrbs(selectedAlly, movementOrbs.Pop());
-            yield return new WaitForSeconds(0.2f);
+            StartCoroutine(SwapOrbs(selectedAlly, movementOrbs.Pop()));
+            yield return new WaitForSeconds(moveDelay);
 
         }
         if (AllWaiting())
@@ -591,10 +662,18 @@ public class GridManager : MonoBehaviour
         }
         //CheckMatch();
         //reset all conditions
+        foreach (GameObject g in arrowIndicators)
+        {
+            g.SetActive(false);
+        }
         selectedAlly.GetComponent<Ally>().moveState = Ally.moveStates.Wait;
-        CheckMatch();
-        StartCoroutine(FillHoles());
+        if (CheckMatch())
+        {
+            StartCoroutine(FillRemaining());
+        }
         //FillHoles();
+        ResetValues();
+
 
     }
     private void ReverseStack()
@@ -614,10 +693,7 @@ public class GridManager : MonoBehaviour
         selectedAlly = null;
         characterSelected = false;
         movementOrbs.Clear();
-        foreach(GameObject g in arrowIndicators)
-        {
-            g.SetActive(false);
-        }
+        
         arrowIndicators.Clear();
     }
     private bool isNeighbour(GameObject orb, GameObject neighbour)
