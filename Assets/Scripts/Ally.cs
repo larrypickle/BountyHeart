@@ -6,6 +6,7 @@ public class Ally : Orb
 {
     public int maxMovement;
     public float healthPoints;
+    public float maxHp;
     public Sprite waiting;
     public Sprite ready;
     public enum moveStates
@@ -34,6 +35,20 @@ public class Ally : Orb
     {
         this.GetComponent<SpriteRenderer>().sprite = ready;
         this.moveState = moveStates.Unselected;
+    }
+
+    public void TakeDamage()
+    {
+        //should return current hp / max hp so that can be applied to the health bar
+        healthPoints--;
+        if(healthPoints <= 0)
+        {
+            Die();
+        }
+    }
+    private void Die()
+    {
+        
     }
 
 }

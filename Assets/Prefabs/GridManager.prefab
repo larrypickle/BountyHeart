@@ -53,6 +53,7 @@ MonoBehaviour:
   - {fileID: 2496997211664720126, guid: 34c846a2078ec294980deb94c19d83b6, type: 3}
   - {fileID: 1256467142952101745, guid: eb59cc675ed287442802e8f79cec8327, type: 3}
   moveDelay: 0
+  transitionSpeed: 0
   party:
   - {fileID: 8720410676350050496, guid: c9ef1251fc14b1347bedfc8d74ae219d, type: 3}
   - {fileID: 310649103896273161, guid: a08b863ccf44e62419efaa97677f4c3d, type: 3}
@@ -61,3 +62,4 @@ MonoBehaviour:
   arrowIndicator: {fileID: 9164340341054672997, guid: cfc403fd534c67e4b8b3b687476bc45c, type: 3}
   stepsLeft: {fileID: 0}
   emptyOrb: {fileID: 4198416919278954104, guid: a53ee7293c54f034592fd9b8bb36b475, type: 3}
+  enemyIndicator: {fileID: 1840953129194418949, guid: 9d662696b67e61044953689bacce9268, type: 3}

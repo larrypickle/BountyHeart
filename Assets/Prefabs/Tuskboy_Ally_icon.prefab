@@ -125,4 +125,6 @@ MonoBehaviour:
   orbType: 3
   maxMovement: 3
   healthPoints: 1
+  waiting: {fileID: 21300000, guid: 568c0c3b9902ba6429b16d2a27c6d265, type: 3}
+  ready: {fileID: 21300000, guid: 1985b215d18f27e4db6be5ce998b5934, type: 3}
   moveState: 0

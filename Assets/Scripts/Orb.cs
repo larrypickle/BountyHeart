@@ -20,6 +20,7 @@ public class Orb : MonoBehaviour
     //public GameObject icon;
     [HideInInspector]
     protected Vector2Int position;
+    public Sprite enemySprite;
 
     protected void Start()
     {
@@ -46,6 +47,12 @@ public class Orb : MonoBehaviour
         sprite = s;
         this.GetComponent<SpriteRenderer>().sprite = s;
     }*/
+    public void BecomeEnemy()
+    {
+        gameObject.GetComponent<SpriteRenderer>().sprite = enemySprite;
+        gameObject.tag = "Enemy";
+        orbType = OrbType.Enemy;
+    }
 
    
 

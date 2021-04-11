@@ -38,6 +38,7 @@ public class GridManager : MonoBehaviour
     private GameObject selectedAlly;
     private GameObject lastSelected;
     public List<GameObject> party;
+    private List<GameObject> partyInstance;
     private Stack<GameObject> movementOrbs;
     private int tilesMoved;
     private bool moving;
@@ -47,22 +48,31 @@ public class GridManager : MonoBehaviour
     private GameObject selectedAllyCursorInstance;
     public GameObject arrowIndicator;
     private Stack<GameObject> arrowIndicators;
-    public TextMeshProUGUI stepsLeft;
+    public TextMeshPro stepsLeft;
+    private int numberWaiting;
 
     [Header("Messy Implementation for Orbs falling")]
     public GameObject emptyOrb;
 
-
+    [Header("Enemy Attack UI")]
+    private GameObject enemyIndicator;
+    private List<GameObject> enemyAttacks;
     // Start is called before the first frame update
     void Start()
     {
+        Debug.Log("Game starting");
         //instantiation
+        numberWaiting = 0;
         moving = false;
         movementOrbs = new Stack<GameObject>();
+        partyInstance = new List<GameObject>();
         selectedAlly = null;
+        enemyIndicator = null;
         CreateGrid();
         characterSelected = false;
+        //EnemyPhase();
         gamePhase = GamePhase.Player;
+        enemyAttacks = new List<GameObject>();
 
         //pooling objects
         selectedAllyCursorInstance = (GameObject)Instantiate(selectedAllyCursor);
@@ -71,95 +81,101 @@ public class GridManager : MonoBehaviour
 
 
     }
-   
+    //Order of a move
+    //build move -> execute move -> check match -> fillholes -> wait
 
     // Update is called once per frame
     void Update()
     {
         //Debug.Log("game" + gamePhase);
         //if there is a touch
-        if (Input.GetMouseButtonDown(0))
+        if (!moving)
         {
-            //place ur party TODO DOESNT WORK
-            /*if(gamePhase == GamePhase.Start)
+            if (Input.GetMouseButtonDown(0))
             {
-                
-                //Touch touch = Input.GetTouch(0);
-                Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-                RaycastHit hit;
-                //raycast isnt hitting anything
-                //TODO
-                Debug.Log("alliesplaced: " + alliesPlaced + "party Count " + party.Count);
-                if (Physics.Raycast(ray, out hit) && alliesPlaced <= party.Count)
+                //place ur party TODO DOESNT WORK
+                /*if(gamePhase == GamePhase.Start)
                 {
-                    Debug.Log("touch registered: " + gamePhase);
-                    GameObject replacedOrb = hit.transform.gameObject;
-                    PlaceParty(replacedOrb);
-                    alliesPlaced++;
+
+                    //Touch touch = Input.GetTouch(0);
+                    Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+                    RaycastHit hit;
+                    //raycast isnt hitting anything
+                    //TODO
+                    Debug.Log("alliesplaced: " + alliesPlaced + "party Count " + party.Count);
+                    if (Physics.Raycast(ray, out hit) && alliesPlaced <= party.Count)
+                    {
+                        Debug.Log("touch registered: " + gamePhase);
+                        GameObject replacedOrb = hit.transform.gameObject;
+                        PlaceParty(replacedOrb);
+                        alliesPlaced++;
+                    }
+
+
+                    gamePhase = GamePhase.Player;
+
+                }*/
+                //move ur party
+                if (gamePhase == GamePhase.Player && movementOrbs.Count <= 1)
+                {
+                    //Debug.Log("Player phase");
+                    //the first tap on screen
+                    //Touch touch = Input.GetTouch(0);
+
+                    TapToSelect(Input.mousePosition);
+
+
+
                 }
-                
-
-                gamePhase = GamePhase.Player;
-                
-            }*/
-            //move ur party
-            if (gamePhase == GamePhase.Player)
-            {
-                //Debug.Log("Player phase");
-                //the first tap on screen
-                //Touch touch = Input.GetTouch(0);
-
-                TapToSelect(Input.mousePosition);
-
-
 
             }
 
+            if (characterSelected)
+            {
+                if (gamePhase == GamePhase.Player)
+                {
+                    Ally ally = selectedAlly.GetComponent<Ally>();
+                    if (ally.moveState == Ally.moveStates.Selected)
+                    {
+                        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+                        RaycastHit2D hit = Physics2D.Raycast(ray.origin, Vector2.zero, Mathf.Infinity);
+                        //store all the tiles 
+                        if (hit)
+                        {
+                            GameObject move_Orbs = hit.transform.gameObject;
+                            if (move_Orbs != lastSelected)
+                            {
+                                //only build move when the tile ur finger is on is a different one
+                                if (movementOrbs.Peek() != null)
+                                {
+                                    if (isNeighbour(move_Orbs, movementOrbs.Peek()))
+                                    {
+                                        buildMove(move_Orbs);
+                                    }
+                                }
+
+
+                            }
+
+                        }
+
+                    }
+                }
+
+            }
+
+            if (Input.GetMouseButtonUp(0) && movementOrbs.Count > 1)
+            {
+                if (gamePhase == GamePhase.Player)
+                {
+                    Debug.Log("Move executed");
+
+                    StartCoroutine(ExecuteMove());
+                }
+
+            }
         }
         
-        if (characterSelected && !moving)
-        {
-            if (gamePhase == GamePhase.Player)
-            {
-                Ally ally = selectedAlly.GetComponent<Ally>();
-                if (ally.moveState == Ally.moveStates.Selected)
-                {
-                    Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-                    RaycastHit2D hit = Physics2D.Raycast(ray.origin, Vector2.zero, Mathf.Infinity);
-                    //store all the tiles 
-                    if (hit)
-                    {
-                        GameObject move_Orbs = hit.transform.gameObject;
-                        if(move_Orbs != lastSelected)
-                        {
-                            //only build move when the tile ur finger is on is a different one
-                            if(movementOrbs.Peek() != null)
-                            {
-                                if (isNeighbour(move_Orbs, movementOrbs.Peek()))
-                                {
-                                    buildMove(move_Orbs);
-                                }
-                            }
-                            
-                            
-                        }
-                        
-                    }
-                    
-                }
-            }
-
-        }
-        if (Input.GetMouseButtonUp(0) && movementOrbs.Count > 1)
-        {
-            if (gamePhase == GamePhase.Player)
-            {
-                Debug.Log("Move executed");
-
-                StartCoroutine(ExecuteMove());
-            }
-
-        }
     }
     
     
@@ -188,6 +204,7 @@ public class GridManager : MonoBehaviour
                 GameObject newTile = (GameObject)Instantiate(partyMember, position, Quaternion.identity);
                 Orb orb = newTile.GetComponent<Orb>();
                 partyCopy.Remove(partyMember);
+                partyInstance.Add(newTile);
                 //Debug.Log("removed party member: " + partyCopy.Count);
                 orb.SetPosition(i, 0);
                 grid[i, 0] = newTile;
@@ -229,9 +246,10 @@ public class GridManager : MonoBehaviour
                 previousBelow = removedObject;
             }
         }
+        Debug.Log("Grid created");
     }
-
-    public void PlaceParty(GameObject replace)
+    //may implement later if we want to be able to choose where to place party members
+    /*public void PlaceParty(GameObject replace)
     {
         Debug.Log("party placed: " + gamePhase);
 
@@ -246,7 +264,7 @@ public class GridManager : MonoBehaviour
         //unspawn the orb on that square
         replace.SetActive(false);
 
-    }
+    }*/
 
     public IEnumerator SwapOrbs(GameObject orb, GameObject orbSwap)
     {
@@ -288,13 +306,6 @@ public class GridManager : MonoBehaviour
         }
         obj.transform.position = target;
     }
-
-    public void CheckSides(Orb o)
-    {
-        Vector2Int position = o.getPosition();
-        //grid[position.x, position.y]
-    }
-
     private bool CheckMatch()
     {
         bool matchFound = false;
@@ -333,14 +344,18 @@ public class GridManager : MonoBehaviour
         
         foreach(GameObject g in matchedTiles)
         {
+            Orb o = g.GetComponent<Orb>();
+            
             //Debug.Log("Destroying object: " + g.name + " at " + g.transform.position);
-            Vector2Int pos = g.GetComponent<Orb>().getPosition();
+            Vector2Int pos = o.getPosition();
             grid[pos.x, pos.y] = emptyOrb;
             grid[pos.x, pos.y].GetComponent<Orb>().SetPosition(pos.x, pos.y);
             Destroy(g);
         }
         return matchFound;
     }
+
+    
     List<GameObject> FindColumnMatchForTile(int x, int y, Orb.OrbType type)
     {
         List<GameObject> matches = new List<GameObject>();
@@ -534,44 +549,78 @@ public class GridManager : MonoBehaviour
         
         if (hit)
         {
-            Debug.Log("Hit object: " + hit.transform.gameObject.name + "Grid[i,j]: " + hit.transform.gameObject.GetComponent<Orb>().getPosition() + "Orb type: " + hit.transform.gameObject.GetComponent<Orb>().orbType);
+            Debug.Log("Hit object: " + hit.transform.gameObject.name + "Grid[i,j]: " + hit.transform.gameObject.GetComponent<Orb>().getPosition() + " Actual Transform.position: " + hit.transform.position + "Orb type: " + hit.transform.gameObject.GetComponent<Orb>().orbType);
 
             if (hit.transform.gameObject.CompareTag("Ally"))
             {
-                selectedAllyCursorInstance.SetActive(true);
-
-                if (!characterSelected)
+                
+                selectedAlly = hit.transform.gameObject;
+                Ally ally = selectedAlly.GetComponent<Ally>();
+                Debug.Log("Ally selected: ally movestate - " + ally.moveState);
+                if (!(ally.moveState == Ally.moveStates.Wait))
                 {
-                    selectedAlly = hit.transform.gameObject;
-                    Ally ally = selectedAlly.GetComponent<Ally>();
-                    ally.moveState = Ally.moveStates.Selected;
-                    characterSelected = true;
-                    //selection ui element on
-                    selectedAllyCursorInstance.transform.position = new Vector3(ally.getPosition().x + xOffset, ally.getPosition().y + yOffset);
-                    tilesMoved = ally.getMovement();
-                    stepsLeft.SetText(ally.getMovement().ToString());
-                    
+                    selectedAllyCursorInstance.SetActive(true);
+                    if (!characterSelected)
+                    {
+                        Debug.Log("Selected ally after no characters were selected.");
+                        ally.moveState = Ally.moveStates.Selected;
+                        characterSelected = true;
+                        //selection ui element on
+                        selectedAllyCursorInstance.transform.position = new Vector3(ally.getPosition().x + xOffset, ally.getPosition().y + yOffset);
+                        tilesMoved = ally.getMovement();
+                        stepsLeft.transform.position = ally.transform.position + new Vector3(0, 0.5f, 0);
+                        stepsLeft.transform.SetParent(hit.transform);
+                        stepsLeft.SetText(ally.getMovement().ToString());
+                        movementOrbs.Push(selectedAlly);
+
+                    }
+                    else if (hit.transform.gameObject != selectedAlly)
+                    {
+                        Debug.Log("Selected new ally");
+                        Ally oldSelection = selectedAlly.GetComponent<Ally>();
+                        Ally newSelection = hit.transform.gameObject.GetComponent<Ally>();
+                        selectedAlly = hit.transform.gameObject;
+                        oldSelection.moveState = Ally.moveStates.Unselected;
+                        newSelection.moveState = Ally.moveStates.Selected;
+                        //moving ui                     
+                        selectedAllyCursorInstance.transform.position = new Vector3(newSelection.getPosition().x + xOffset, newSelection.getPosition().y + yOffset);
+                        tilesMoved = newSelection.getMovement();
+                        stepsLeft.transform.position = ally.transform.position + new Vector3(0, 0.5f, 0);
+                        stepsLeft.transform.SetParent(hit.transform);
+                        stepsLeft.SetText(newSelection.getMovement().ToString());
+                        movementOrbs.Pop();
+                        movementOrbs.Push(selectedAlly);
+
+                    }
+                    else
+                    {
+                        //selectedAlly = null;
+                        movementOrbs.Pop();
+                        Debug.Log("Deselect");
+                        characterSelected = false;
+                        stepsLeft.SetText("");
+                        selectedAllyCursorInstance.SetActive(false);
+                    }
+                    lastSelected = selectedAlly;
                 }
-                else if(hit.transform.gameObject != selectedAlly)
-                {
-                    Ally oldSelection = selectedAlly.GetComponent<Ally>();
-                    Ally newSelection = hit.transform.gameObject.GetComponent<Ally>();
-                    selectedAlly = hit.transform.gameObject;
-                    oldSelection.moveState = Ally.moveStates.Unselected;
-                    newSelection.moveState = Ally.moveStates.Selected;
-                    //moving ui                     
-                    selectedAllyCursorInstance.transform.position = new Vector3(newSelection.getPosition().x + xOffset, newSelection.getPosition().y + yOffset);
-                    tilesMoved = newSelection.getMovement();
-                    stepsLeft.SetText(newSelection.getMovement().ToString());
 
+            }
+            else if (hit.transform.gameObject.CompareTag("Enemy"))
+            {
+                //if enemy was last selected
+                if(hit.transform.gameObject == lastSelected)
+                {
+                    Debug.Log("Selecting enemy that was already selected, not showing enemy attack range.");
+                    enemyIndicator.SetActive(false);
+                    lastSelected = null;
                 }
                 else
                 {
-                    Debug.Log("deselect");
-                    // = 
+                    Debug.Log("Selected enemy - showing enemy attack range");
+                    enemyIndicator = ObjectPooler.Instance.SpawnFromPool("EnemyIndicator", hit.transform.position, Quaternion.identity);
+                    lastSelected = hit.transform.gameObject;
                 }
-                lastSelected = selectedAlly;
-                movementOrbs.Push(selectedAlly);
+                
 
             }
         }
@@ -650,8 +699,73 @@ public class GridManager : MonoBehaviour
         Debug.Log("tiles moved: " + tilesMoved);
 
     }
-    
 
+    private IEnumerator EnemyPhase()
+    {
+        Debug.Log("Enemy phase started");
+        gamePhase = GamePhase.Enemy;
+
+        int count = 0;
+        while(count < 3)
+        {
+            int randomX = Random.Range(0, 4);
+            int randomY = Random.Range(0, 4);
+            if (!grid[randomX, randomY].CompareTag("Ally") && !grid[randomX, randomY].CompareTag("Enemy"))
+            {
+                count++;
+                Debug.Log("Grid " + randomX + ", " + randomY + " became enemy orb");
+                grid[randomX, randomY].GetComponent<Orb>().BecomeEnemy();
+                GameObject enemy = grid[randomX, randomY];
+                
+                yield return new WaitForSeconds(moveDelay);
+            }
+        }
+        foreach(GameObject g in enemyAttacks)
+        {
+            yield return EnemyAttack(g);
+
+        }
+        StartPlayerPhase();
+        
+        
+    }
+    private IEnumerator EnemyAttack(GameObject enemy)
+    {
+        Orb o = enemy.GetComponent<Orb>();
+        Vector2Int pos = o.getPosition();
+        //check neighbors
+        if(grid[pos.x - 1, pos.y].CompareTag("Ally"))
+        {
+            grid[pos.x - 1, pos.y].GetComponent<Ally>().TakeDamage();
+        }
+        if(grid[pos.x + 1, pos.y].CompareTag("Ally"))
+        {
+            grid[pos.x + 1, pos.y].GetComponent<Ally>().TakeDamage();
+
+        }
+        if (grid[pos.x, pos.y - 1].CompareTag("Ally"))
+        {
+            grid[pos.x, pos.y - 1].GetComponent<Ally>().TakeDamage();
+
+        }
+        if (grid[pos.x, pos.y + 1].CompareTag("Ally"))
+        {
+            grid[pos.x, pos.y + 1].GetComponent<Ally>().TakeDamage();
+
+        }
+        yield return new WaitForSeconds(moveDelay);
+    }
+    private void StartPlayerPhase()
+    {
+        numberWaiting = 0;
+        Debug.Log("Player phase started");
+        gamePhase = GamePhase.Player;
+        foreach(GameObject g in partyInstance)
+        {
+            g.GetComponent<Ally>().Ready();
+        }
+        return;
+    }
     private IEnumerator ExecuteMove()
     {
         Debug.Log("Executing move of size " + movementOrbs.Count);
@@ -676,22 +790,29 @@ public class GridManager : MonoBehaviour
             yield return new WaitForSeconds(moveDelay);
 
         }
-        if (AllWaiting())
-        {
-            Debug.Log("Enemy phase, all allies waiting");
-            gamePhase = GamePhase.Enemy;
-        }
+        
         //CheckMatch();
         //reset all conditions
         foreach (GameObject g in arrowIndicators)
         {
             g.SetActive(false);
         }
-        selectedAlly.GetComponent<Ally>().moveState = Ally.moveStates.Wait;
+        Ally a = selectedAlly.GetComponent<Ally>();
+        a.moveState = Ally.moveStates.Wait;
+        numberWaiting++;
+        a.Wait();
+        
 
         if (CheckMatch())
         {
-            StartCoroutine(FillRemaining());
+            yield return FillRemaining();
+        }
+
+        if (numberWaiting >= party.Count)
+        {
+            Debug.Log("Enemy phase, all allies waiting");
+            gamePhase = GamePhase.Enemy;
+            StartCoroutine(EnemyPhase());
         }
         //FillHoles();
         ResetValues();
@@ -715,6 +836,7 @@ public class GridManager : MonoBehaviour
         selectedAlly = null;
         characterSelected = false;
         movementOrbs.Clear();
+        stepsLeft.SetText("");
         
         arrowIndicators.Clear();
     }
@@ -744,14 +866,7 @@ public class GridManager : MonoBehaviour
 
     }
     //TODO
-    private bool AllWaiting()
-    {
-        return false;
-    }
+    
 
-    private void DisplayMaxSteps(Ally ally)
-    {
-        stepsLeft.SetText(ally.getMovement().ToString());
-    }
     
 }
