@@ -8,7 +8,7 @@ public class Orb : MonoBehaviour
     public enum OrbType
     {
         Attack,
-        Shield,
+        Talk,
         Heal,
         Ally,
         Enemy,

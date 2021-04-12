@@ -348,14 +348,50 @@ public class GridManager : MonoBehaviour
             
             //Debug.Log("Destroying object: " + g.name + " at " + g.transform.position);
             Vector2Int pos = o.getPosition();
+
+            //create empty orb with position that is same as grid that was destroyed
             grid[pos.x, pos.y] = emptyOrb;
             grid[pos.x, pos.y].GetComponent<Orb>().SetPosition(pos.x, pos.y);
+
+            //different behaviors based on what was matched
+            switch (o.orbType)
+            {
+                case Orb.OrbType.Attack:
+                    Attack();
+                    break;
+                case Orb.OrbType.Enemy:
+                    enemyAttacks.Remove(g);
+                    break;
+                case Orb.OrbType.Heal:
+                    Heal();
+                    break;
+                case Orb.OrbType.Talk:
+                    Talk();
+                    break;
+
+            }
+                
             Destroy(g);
         }
         return matchFound;
     }
+    private IEnumerator Attack()
+    {
+        Debug.Log("Attack initiated");
+        yield return null;
+    }
+    private IEnumerator Heal()
+    {
+        Debug.Log("Heal initiated");
+        yield return null;
+    }
+    private IEnumerator Talk()
+    {
+        Debug.Log("Talk initiated");
+        yield return null;
+    }
 
-    
+
     List<GameObject> FindColumnMatchForTile(int x, int y, Orb.OrbType type)
     {
         List<GameObject> matches = new List<GameObject>();
@@ -716,12 +752,13 @@ public class GridManager : MonoBehaviour
                 Debug.Log("Grid " + randomX + ", " + randomY + " became enemy orb");
                 grid[randomX, randomY].GetComponent<Orb>().BecomeEnemy();
                 GameObject enemy = grid[randomX, randomY];
-                
+                enemyAttacks.Add(enemy);
                 yield return new WaitForSeconds(moveDelay);
             }
         }
         foreach(GameObject g in enemyAttacks)
         {
+            Debug.Log("Enemy Attack initiating");
             yield return EnemyAttack(g);
 
         }
@@ -734,26 +771,73 @@ public class GridManager : MonoBehaviour
         Orb o = enemy.GetComponent<Orb>();
         Vector2Int pos = o.getPosition();
         //check neighbors
-        if(grid[pos.x - 1, pos.y].CompareTag("Ally"))
+        if(pos.x-1 >= 0)
         {
-            grid[pos.x - 1, pos.y].GetComponent<Ally>().TakeDamage();
+            if (grid[pos.x - 1, pos.y].CompareTag("Ally"))
+            {
+                grid[pos.x - 1, pos.y].GetComponent<Ally>().TakeDamage();
+                yield return characterFlashRed(grid[pos.x - 1, pos.y]);
+            }
         }
-        if(grid[pos.x + 1, pos.y].CompareTag("Ally"))
+        if(pos.x+1 <= col)
         {
-            grid[pos.x + 1, pos.y].GetComponent<Ally>().TakeDamage();
+            if (grid[pos.x + 1, pos.y].CompareTag("Ally"))
+            {
+                grid[pos.x + 1, pos.y].GetComponent<Ally>().TakeDamage();
+                yield return characterFlashRed(grid[pos.x + 1, pos.y]);
 
+            }
         }
-        if (grid[pos.x, pos.y - 1].CompareTag("Ally"))
+        
+        if(pos.y-1 >= 0)
         {
-            grid[pos.x, pos.y - 1].GetComponent<Ally>().TakeDamage();
+            if (grid[pos.x, pos.y - 1].CompareTag("Ally"))
+            {
+                grid[pos.x, pos.y - 1].GetComponent<Ally>().TakeDamage();
+                yield return characterFlashRed(grid[pos.x, pos.y - 1]);
 
+            }
         }
-        if (grid[pos.x, pos.y + 1].CompareTag("Ally"))
+        
+        if(pos.y+1 <= row)
         {
-            grid[pos.x, pos.y + 1].GetComponent<Ally>().TakeDamage();
+            if (grid[pos.x, pos.y + 1].CompareTag("Ally"))
+            {
+                grid[pos.x, pos.y + 1].GetComponent<Ally>().TakeDamage();
+                yield return characterFlashRed(grid[pos.x, pos.y + 1]);
 
+            }
         }
         yield return new WaitForSeconds(moveDelay);
+    }
+
+    private IEnumerator characterFlashRed(GameObject g)
+    {
+        SpriteRenderer sprite = g.GetComponent<SpriteRenderer>();
+        float flashingFor = 0;
+        float flashSpeed = 0.1f;
+        float flashTime = 0.3f;
+        var flashColor = Color.red;
+        var newColor = flashColor;
+        var originalColor = Color.white;
+        while (flashingFor < flashTime)
+        {
+            sprite.color = newColor;
+            flashingFor += Time.deltaTime;
+            yield return new WaitForSeconds(flashSpeed);
+            flashingFor += flashSpeed;
+            if (newColor == flashColor)
+            {
+                newColor = originalColor;
+            }
+            else
+            {
+                newColor = flashColor;
+            }
+        }
+        sprite.color = originalColor;
+
+
     }
     private void StartPlayerPhase()
     {
