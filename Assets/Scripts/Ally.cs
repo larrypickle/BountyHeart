@@ -66,6 +66,27 @@ public class Ally : Orb
             Die();
         }
     }
+    public void GainHealth()
+    {
+        
+        healthPoints += healing / maxHp;
+        if(healthPoints >= maxHp)
+        {
+            healthPoints = maxHp;
+        }
+        Vector3 temp = healthBar.transform.localScale;
+        temp.x = healthPoints / maxHp;
+
+        Debug.Log("Character" + name + "gained " + healing / maxHp + "HP. HP is at " + healthPoints + ", max HP is " + maxHp + "healthbar.x = " + temp.x);
+
+        healthBar.gameObject.transform.localScale = temp;
+        if (healthPoints <= 0)
+        {
+            Die();
+        }
+
+    }
+
     private void Die()
     {
         Debug.Log("Character " + name + "fucking died");

@@ -57,6 +57,10 @@ public class GridManager : MonoBehaviour
     [Header("Enemy Attack UI")]
     private GameObject enemyIndicator;
     private List<GameObject> enemyAttacks;
+
+    [Header("Orb Matching Effects")]
+    public Enemy enemy;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -306,7 +310,7 @@ public class GridManager : MonoBehaviour
         }
         obj.transform.position = target;
     }
-    private bool CheckMatch()
+    private IEnumerator CheckMatch()
     {
         bool matchFound = false;
         Debug.Log("Checking match");
@@ -325,6 +329,7 @@ public class GridManager : MonoBehaviour
                 List<GameObject> horizontalMatches = FindColumnMatchForTile(i, j, type);
                 if(horizontalMatches.Count >= 2)
                 {
+                    Debug.Log("Orbtype being added: " + o.orbType);
                     matchedTiles.UnionWith(horizontalMatches);
                     //Debug.Log("Adding into match: " + grid[i, j].name + " at " + grid[i, j].transform.position + "at " + i + "," + j);
                     matchedTiles.Add(grid[i, j]);
@@ -333,10 +338,16 @@ public class GridManager : MonoBehaviour
                 List<GameObject> verticalMatches = FindRowMatchForTile(i, j, type);
                 if(verticalMatches.Count >= 2)
                 {
+                    Debug.Log("Orbtype being added: " + o.orbType);
+
                     matchedTiles.UnionWith(verticalMatches);
                     //Debug.Log("Adding into match: " + grid[i, j].name + " at " + grid[i, j].transform.position + "at " + i + "," + j);
                     matchedTiles.Add(grid[i, j]);
                     matchFound = true;
+                }
+                if (matchFound)
+                {
+
                 }
 
             }
@@ -354,41 +365,46 @@ public class GridManager : MonoBehaviour
             grid[pos.x, pos.y].GetComponent<Orb>().SetPosition(pos.x, pos.y);
 
             //different behaviors based on what was matched
+            Debug.Log("Matching orb type: " + o.orbType);
             switch (o.orbType)
             {
                 case Orb.OrbType.Attack:
-                    Attack();
+                    yield return Attack();
                     break;
                 case Orb.OrbType.Enemy:
                     enemyAttacks.Remove(g);
                     break;
                 case Orb.OrbType.Heal:
-                    Heal();
+                    Debug.Log("Heal?: " + selectedAlly.name);
+                    yield return Heal(selectedAlly);
                     break;
                 case Orb.OrbType.Talk:
-                    Talk();
+                    yield return Talk();
                     break;
 
             }
                 
             Destroy(g);
         }
-        return matchFound;
     }
     private IEnumerator Attack()
     {
         Debug.Log("Attack initiated");
-        yield return null;
+        enemy.TakeDamage();
+        yield return new WaitForSeconds(0.2f);
     }
-    private IEnumerator Heal()
+    private IEnumerator Heal(GameObject g)
     {
+        Debug.Log(selectedAlly.name + " is being healed");
+        selectedAlly.GetComponent<Ally>().GainHealth();
         Debug.Log("Heal initiated");
-        yield return null;
+        yield return characterFlash(selectedAlly, Color.green);
     }
     private IEnumerator Talk()
     {
         Debug.Log("Talk initiated");
-        yield return null;
+        enemy.LowerHostility();
+        yield return new WaitForSeconds(0.2f);
     }
 
 
@@ -776,15 +792,15 @@ public class GridManager : MonoBehaviour
             if (grid[pos.x - 1, pos.y].CompareTag("Ally"))
             {
                 grid[pos.x - 1, pos.y].GetComponent<Ally>().TakeDamage();
-                yield return characterFlashRed(grid[pos.x - 1, pos.y]);
+                yield return characterFlash(grid[pos.x - 1, pos.y], Color.red);
             }
         }
-        if(pos.x+1 <= col)
+        if(pos.x+1 < col)
         {
             if (grid[pos.x + 1, pos.y].CompareTag("Ally"))
             {
                 grid[pos.x + 1, pos.y].GetComponent<Ally>().TakeDamage();
-                yield return characterFlashRed(grid[pos.x + 1, pos.y]);
+                yield return characterFlash(grid[pos.x + 1, pos.y], Color.red);
 
             }
         }
@@ -794,30 +810,30 @@ public class GridManager : MonoBehaviour
             if (grid[pos.x, pos.y - 1].CompareTag("Ally"))
             {
                 grid[pos.x, pos.y - 1].GetComponent<Ally>().TakeDamage();
-                yield return characterFlashRed(grid[pos.x, pos.y - 1]);
+                yield return characterFlash(grid[pos.x, pos.y - 1], Color.red);
 
             }
         }
         
-        if(pos.y+1 <= row)
+        if(pos.y+1 < row)
         {
             if (grid[pos.x, pos.y + 1].CompareTag("Ally"))
             {
                 grid[pos.x, pos.y + 1].GetComponent<Ally>().TakeDamage();
-                yield return characterFlashRed(grid[pos.x, pos.y + 1]);
+                yield return characterFlash(grid[pos.x, pos.y + 1], Color.red);
 
             }
         }
         yield return new WaitForSeconds(moveDelay);
     }
 
-    private IEnumerator characterFlashRed(GameObject g)
+    private IEnumerator characterFlash(GameObject g, Color color)
     {
         SpriteRenderer sprite = g.GetComponent<SpriteRenderer>();
         float flashingFor = 0;
         float flashSpeed = 0.1f;
         float flashTime = 0.3f;
-        var flashColor = Color.red;
+        var flashColor = color;
         var newColor = flashColor;
         var originalColor = Color.white;
         while (flashingFor < flashTime)
