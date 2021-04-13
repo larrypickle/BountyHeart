@@ -112,4 +112,14 @@ public class Enemy : MonoBehaviour
         }
         sprite.color = originalColor;
     }
+    public float GetCurrentHP()
+    {
+        return currentHP;
+    }
+
+    public float GetCurrentHostility()
+    {
+        return currentHostility;
+    }
+    
 }

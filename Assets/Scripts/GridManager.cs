@@ -59,6 +59,8 @@ public class GridManager : MonoBehaviour
     private GameObject enemyIndicator;
     private List<GameObject> enemyAttacks;
     public int numAttacks = 3;
+    public GameObject gameOverScreen;
+    public TextMeshProUGUI gameOverMessage;
 
     [Header("Orb Matching Effects")]
     public Enemy enemy;
@@ -78,7 +80,7 @@ public class GridManager : MonoBehaviour
         //EnemyPhase();
         gamePhase = GamePhase.Player;
         enemyAttacks = new List<GameObject>();
-
+        gameOverScreen.SetActive(false);
         //pooling objects
         selectedAllyCursorInstance = (GameObject)Instantiate(selectedAllyCursor);
         selectedAllyCursorInstance.SetActive(false);
@@ -405,6 +407,10 @@ public class GridManager : MonoBehaviour
     {
         Debug.Log("Attack initiated");
         enemy.TakeDamage(attack);
+        if(enemy.GetCurrentHP() <= 0)
+        {
+            StartCoroutine(GameOverKill());
+        }
         yield return new WaitForSeconds(0.2f);
     }
     private IEnumerator Heal(GameObject g)
@@ -418,9 +424,32 @@ public class GridManager : MonoBehaviour
     {
         Debug.Log("Talk initiated");
         enemy.LowerHostility(charisma);
+        if (enemy.GetCurrentHostility() <= 0)
+        {
+            StartCoroutine(GameOver());
+        }
         yield return new WaitForSeconds(0.2f);
     }
 
+    private IEnumerator GameOverKill()
+    {
+        gameOverScreen.SetActive(true);
+        gameOverMessage.SetText("You have killed the great Porto the Frog. His family grieves for him. You gained his bounty of 2 gold");
+        yield return null;
+        //gameOverScreen.SetActive(false);
+
+
+    }
+
+    private IEnumerator GameOver()
+    {
+        gameOverScreen.SetActive(true);
+        gameOverMessage.SetText("The great Porto the Frog has joined your party. He brings mushrooms and has cool regenerative powers.");
+        yield return null;
+        //gameOverScreen.SetActive(false);
+
+
+    }
 
     List<GameObject> FindColumnMatchForTile(int x, int y, Orb.OrbType type)
     {
@@ -936,6 +965,7 @@ public class GridManager : MonoBehaviour
             Debug.Log("Enemy phase, all allies waiting");
             gamePhase = GamePhase.Enemy;
             yield return EnemyPhase();
+            
         }
         //FillHoles();
         ResetValues();
