@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Ally
   - Enemy
+  - Frog
   layers:
   - Default
   - TransparentFX

@@ -13,10 +13,13 @@ public class Ally : Orb
     public float maxHp;
     public Sprite waiting;
     public Sprite ready;
+    public Sprite portrait;
 
     [HideInInspector]
     public float healthPoints;
     public GameObject healthBar;
+
+    public string deathText;
 
     public enum moveStates
     {
@@ -27,6 +30,7 @@ public class Ally : Orb
     }
     [HideInInspector]
     public moveStates moveState;
+    public List<GameObject> orbSprites;
 
     new private void Start()
     {
@@ -63,7 +67,7 @@ public class Ally : Orb
         healthBar.gameObject.transform.localScale = temp;
         if(healthPoints <= 0)
         {
-            Die();
+            StartCoroutine(Die());
         }
     }
     public void GainHealth()
@@ -80,20 +84,22 @@ public class Ally : Orb
         Debug.Log("Character" + name + "gained " + healing / maxHp + "HP. HP is at " + healthPoints + ", max HP is " + maxHp + "healthbar.x = " + temp.x);
 
         healthBar.gameObject.transform.localScale = temp;
-        if (healthPoints <= 0)
-        {
-            Die();
-        }
+        
 
     }
 
-    private void Die()
+    private IEnumerator Die()
     {
+        yield return new WaitForSeconds(0.5f);
         Debug.Log("Character " + name + "fucking died");
+        //FindObjectOfType<Dialogue>().DisplayText(deathText, this.GetComponent<SpriteRenderer>().sprite);
+        GameObject orb = orbSprites[Random.Range(0, orbSprites.Count)];
+        
+        this.GetComponent<SpriteRenderer>().sprite = orb.GetComponent<SpriteRenderer>().sprite;
+        this.orbType = orb.GetComponent<Orb>().orbType;
+        this.tag = "Untagged";
     }
-    private void DisplayAll()
-    {
-
-    }
+    
+    
 
 }

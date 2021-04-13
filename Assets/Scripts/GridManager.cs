@@ -50,6 +50,7 @@ public class GridManager : MonoBehaviour
     private Stack<GameObject> arrowIndicators;
     public TextMeshPro stepsLeft;
     private int numberWaiting;
+    public GameObject allyInfo;
 
     [Header("Messy Implementation for Orbs falling")]
     public GameObject emptyOrb;
@@ -57,12 +58,13 @@ public class GridManager : MonoBehaviour
     [Header("Enemy Attack UI")]
     private GameObject enemyIndicator;
     private List<GameObject> enemyAttacks;
+    public int numAttacks = 3;
 
     [Header("Orb Matching Effects")]
     public Enemy enemy;
 
     // Start is called before the first frame update
-    void Start()
+    private void Awake()
     {
         Debug.Log("Game starting");
         //instantiation
@@ -72,7 +74,6 @@ public class GridManager : MonoBehaviour
         partyInstance = new List<GameObject>();
         selectedAlly = null;
         enemyIndicator = null;
-        CreateGrid();
         characterSelected = false;
         //EnemyPhase();
         gamePhase = GamePhase.Player;
@@ -82,6 +83,12 @@ public class GridManager : MonoBehaviour
         selectedAllyCursorInstance = (GameObject)Instantiate(selectedAllyCursor);
         selectedAllyCursorInstance.SetActive(false);
         arrowIndicators = new Stack<GameObject>();
+    }
+    void Start()
+    {
+        ResetValues();
+        CreateGrid();
+        StartCoroutine(EnemyPhase());
 
 
     }
@@ -281,7 +288,7 @@ public class GridManager : MonoBehaviour
 
         grid[position.x, position.y] = orbSwap;
         grid[swapPosition.x, swapPosition.y] = orb;
-        Debug.Log("Swapping orbs | before swap | orb 1 " + orb.name + "position: " + o.getPosition() + " orb 2 " + orbSwap.name + "position: " + oSwap.getPosition());
+        //Debug.Log("Swapping orbs | before swap | orb 1 " + orb.name + "position: " + o.getPosition() + " orb 2 " + orbSwap.name + "position: " + oSwap.getPosition());
 
         oSwap.SetPosition(position.x, position.y);
         o.SetPosition(swapPosition.x, swapPosition.y);
@@ -292,7 +299,7 @@ public class GridManager : MonoBehaviour
         StartCoroutine(MoveObject(orbSwap, orbSwap.transform.position, tempPosition, moveDelay));
 
         //orbSwap.transform.position = tempPosition;
-        Debug.Log("Swapping orbs | after swap | orb 1 " + orb.name + "position: " + o.getPosition() + " orb 2 " + orbSwap.name + "position: " + oSwap.getPosition());
+        //Debug.Log("Swapping orbs | after swap | orb 1 " + orb.name + "position: " + o.getPosition() + " orb 2 " + orbSwap.name + "position: " + oSwap.getPosition());
         //CheckMatch();
         yield return null;
 
@@ -345,52 +352,59 @@ public class GridManager : MonoBehaviour
                     matchedTiles.Add(grid[i, j]);
                     matchFound = true;
                 }
-                if (matchFound)
+                
+
+            }
+        }
+        if (matchFound)
+        {
+            foreach (GameObject g in matchedTiles)
+            {
+                Orb matched = g.GetComponent<Orb>();
+
+                //Debug.Log("Destroying object: " + g.name + " at " + g.transform.position);
+                Vector2Int pos = matched.getPosition();
+
+                //create empty orb with position that is same as grid that was destroyed
+                grid[pos.x, pos.y] = emptyOrb;
+                grid[pos.x, pos.y].GetComponent<Orb>().SetPosition(pos.x, pos.y);
+
+                //different behaviors based on what was matched
+                Debug.Log("Matching orb type: " + matched.orbType);
+                switch (matched.orbType)
                 {
+                    case Orb.OrbType.Attack:
+                        yield return Attack(selectedAlly.GetComponent<Ally>().attack);
+                        break;
+                    case Orb.OrbType.Enemy:
+                        yield return new WaitForSeconds(0.2f);
+                        enemyAttacks.Remove(g);
+                        break;
+                    case Orb.OrbType.Heal:
+                        Debug.Log("Heal?: " + selectedAlly.name);
+                        yield return Heal(selectedAlly);
+                        break;
+                    case Orb.OrbType.Talk:
+                        yield return Talk(selectedAlly.GetComponent<Ally>().charisma);
+                        break;
 
                 }
-
+                Debug.Log("Destroying " + g.name + " at " + pos);
+                g.SetActive(false);
+                Debug.Log("Matched tiles size: " + matchedTiles.Count);
             }
-        }
-        
-        foreach(GameObject g in matchedTiles)
-        {
-            Orb o = g.GetComponent<Orb>();
-            
-            //Debug.Log("Destroying object: " + g.name + " at " + g.transform.position);
-            Vector2Int pos = o.getPosition();
-
-            //create empty orb with position that is same as grid that was destroyed
-            grid[pos.x, pos.y] = emptyOrb;
-            grid[pos.x, pos.y].GetComponent<Orb>().SetPosition(pos.x, pos.y);
-
-            //different behaviors based on what was matched
-            Debug.Log("Matching orb type: " + o.orbType);
-            switch (o.orbType)
+            foreach(GameObject g in matchedTiles)
             {
-                case Orb.OrbType.Attack:
-                    yield return Attack();
-                    break;
-                case Orb.OrbType.Enemy:
-                    enemyAttacks.Remove(g);
-                    break;
-                case Orb.OrbType.Heal:
-                    Debug.Log("Heal?: " + selectedAlly.name);
-                    yield return Heal(selectedAlly);
-                    break;
-                case Orb.OrbType.Talk:
-                    yield return Talk();
-                    break;
-
+                g.SetActive(false);
             }
-                
-            Destroy(g);
+            matchedTiles.Clear();
+            //matchFound = false;
         }
     }
-    private IEnumerator Attack()
+    private IEnumerator Attack(float attack)
     {
         Debug.Log("Attack initiated");
-        enemy.TakeDamage();
+        enemy.TakeDamage(attack);
         yield return new WaitForSeconds(0.2f);
     }
     private IEnumerator Heal(GameObject g)
@@ -400,10 +414,10 @@ public class GridManager : MonoBehaviour
         Debug.Log("Heal initiated");
         yield return characterFlash(selectedAlly, Color.green);
     }
-    private IEnumerator Talk()
+    private IEnumerator Talk(float charisma)
     {
         Debug.Log("Talk initiated");
-        enemy.LowerHostility();
+        enemy.LowerHostility(charisma);
         yield return new WaitForSeconds(0.2f);
     }
 
@@ -450,21 +464,21 @@ public class GridManager : MonoBehaviour
 
     private IEnumerator FillHoles()
     {
-        for (int i = 0; i < row; i++)
+        /*for (int i = 0; i < row; i++)
         {
             for (int j = 0; j < col; j++)
             {
                 Debug.Log("grid space: " + i + "," + j + ": " + grid[i, j]);
             }
-        }
-        Debug.Log("Filling holes");
+        }*/
+        //Debug.Log("Filling holes");
         for(int i = 0; i < row; i++)
         {
             for(int j = 0; j < col; j++)
             {
                 if (grid[i,j] == emptyOrb)
                 {
-                    Debug.Log("Empty space detected: " + i + ", " + j);
+                    //Debug.Log("Empty space detected: " + i + ", " + j);
                     yield return Skyfall(i, j);
                     break;
                     
@@ -491,7 +505,7 @@ public class GridManager : MonoBehaviour
 
             if (grid[x, y] == emptyOrb)
             {
-                Debug.Log("Null count incremented at " + x + "," + y + " with object " + grid[x, y].name);
+                //Debug.Log("Null count incremented at " + x + "," + y + " with object " + grid[x, y].name);
                 nullCount++;
             }
             //orbs.Add(grid[x, y]);
@@ -501,13 +515,14 @@ public class GridManager : MonoBehaviour
         {
             for (int y = yStart; y < col - 1; y++)
             {
+
                 GameObject falling = grid[x, y + 1];
                 Vector3 dropDown = falling.transform.position - new Vector3(0, tileSize, 0);
                 grid[x, y + 1] = emptyOrb;
                 falling.GetComponent<Orb>().SetPosition(x, y);
-                StartCoroutine(MoveObject(falling, falling.transform.position, dropDown, moveDelay));
+                yield return (MoveObject(falling, falling.transform.position, dropDown, 0.05f));
                 grid[x, y] = falling;
-                yield return new WaitForSeconds(moveDelay);
+                yield return new WaitForSeconds(0.1f);
 
             }
             /*for (int j = 0; j < orbs.Count - 1; j++)
@@ -569,7 +584,7 @@ public class GridManager : MonoBehaviour
             {
                 if (grid[x, y] == emptyOrb)
                 {
-                    yield return new WaitForSeconds(moveDelay);
+                    yield return new WaitForSeconds(0.1f);
                     //choose a random orb from orblist 
                     GameObject random = orbTemp[Random.Range(0, orbTemp.Count)];
                     Vector3 position = new Vector3(x * tileSize + xOffset, y * tileSize + yOffset);
@@ -624,6 +639,8 @@ public class GridManager : MonoBehaviour
                         stepsLeft.transform.SetParent(hit.transform);
                         stepsLeft.SetText(ally.getMovement().ToString());
                         movementOrbs.Push(selectedAlly);
+                        allyInfo.SetActive(true);
+                        allyInfo.GetComponent<AllyInfo>().SetValues(ally);
 
                     }
                     else if (hit.transform.gameObject != selectedAlly)
@@ -642,6 +659,8 @@ public class GridManager : MonoBehaviour
                         stepsLeft.SetText(newSelection.getMovement().ToString());
                         movementOrbs.Pop();
                         movementOrbs.Push(selectedAlly);
+                        allyInfo.GetComponent<AllyInfo>().SetValues(ally);
+
 
                     }
                     else
@@ -652,6 +671,8 @@ public class GridManager : MonoBehaviour
                         characterSelected = false;
                         stepsLeft.SetText("");
                         selectedAllyCursorInstance.SetActive(false);
+                        allyInfo.SetActive(false);
+
                     }
                     lastSelected = selectedAlly;
                 }
@@ -689,7 +710,7 @@ public class GridManager : MonoBehaviour
             //to calculate what the rotation of the arrow should be
             GameObject lastMoveOrb = movementOrbs.Peek();
             Vector3 difference = (move_Orbs.transform.position - lastMoveOrb.transform.position).normalized;
-            Debug.Log("difference: " + difference);
+            //Debug.Log("difference: " + difference);
             Vector3 rotation = new Vector3(0, 0, 0);
             if(difference.x == -1)
             {
@@ -705,7 +726,7 @@ public class GridManager : MonoBehaviour
             }
             
             
-            Debug.Log("Build move adding: " + move_Orbs.name + "at " + move_Orbs.transform.position);
+            //Debug.Log("Build move adding: " + move_Orbs.name + "at " + move_Orbs.transform.position);
             GameObject ai = ObjectPooler.Instance.SpawnFromPool("MoveIndicator", move_Orbs.transform.position, Quaternion.Euler(rotation));
 
             movementOrbs.Push(move_Orbs);
@@ -717,7 +738,7 @@ public class GridManager : MonoBehaviour
         else if(movementOrbs.Contains(move_Orbs))
         {
 
-            Debug.Log("Build move removing: " + move_Orbs.name + "at " + move_Orbs.transform.position);
+            //Debug.Log("Build move removing: " + move_Orbs.name + "at " + move_Orbs.transform.position);
             movementOrbs.Pop();
             tilesMoved += 1;
             arrowIndicators.Pop().SetActive(false);
@@ -748,7 +769,7 @@ public class GridManager : MonoBehaviour
         
         stepsLeft.SetText(tilesMoved.ToString());
 
-        Debug.Log("tiles moved: " + tilesMoved);
+        //Debug.Log("tiles moved: " + tilesMoved);
 
     }
 
@@ -756,9 +777,9 @@ public class GridManager : MonoBehaviour
     {
         Debug.Log("Enemy phase started");
         gamePhase = GamePhase.Enemy;
-
+        
         int count = 0;
-        while(count < 3)
+        while(count < 2)
         {
             int randomX = Random.Range(0, 4);
             int randomY = Random.Range(0, 4);
@@ -772,7 +793,7 @@ public class GridManager : MonoBehaviour
                 yield return new WaitForSeconds(moveDelay);
             }
         }
-        foreach(GameObject g in enemyAttacks)
+        foreach (GameObject g in enemyAttacks)
         {
             Debug.Log("Enemy Attack initiating");
             yield return EnemyAttack(g);
@@ -901,18 +922,20 @@ public class GridManager : MonoBehaviour
         a.moveState = Ally.moveStates.Wait;
         numberWaiting++;
         a.Wait();
-        
 
-        if (CheckMatch())
+        yield return CheckMatch();
+        yield return FillRemaining();
+
+        /*if (CheckMatch())
         {
             yield return FillRemaining();
-        }
+        }*/
 
         if (numberWaiting >= party.Count)
         {
             Debug.Log("Enemy phase, all allies waiting");
             gamePhase = GamePhase.Enemy;
-            StartCoroutine(EnemyPhase());
+            yield return EnemyPhase();
         }
         //FillHoles();
         ResetValues();
