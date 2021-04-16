@@ -64,7 +64,12 @@ public class GridManager : MonoBehaviour
 
     [Header("Orb Matching Effects")]
     public Enemy enemy;
-
+    public AudioSource pain;
+    public AudioSource matchSound;
+    public AudioSource croak;
+    public AudioSource moveSound;
+    public AudioSource tapSound;
+    public AllyInfo aInfo;
     // Start is called before the first frame update
     private void Awake()
     {
@@ -188,11 +193,11 @@ public class GridManager : MonoBehaviour
 
             }
         }
-        
+
     }
-    
-    
-    
+
+
+
     //[row][col] = [y][x]
     public void CreateGrid()
     {
@@ -281,6 +286,12 @@ public class GridManager : MonoBehaviour
 
     public IEnumerator SwapOrbs(GameObject orb, GameObject orbSwap)
     {
+        if (!moveSound.isPlaying)
+        {
+            moveSound.pitch = Random.Range(0.8f, 1.2f);
+            moveSound.Play();
+        }
+
         Orb o = orb.GetComponent<Orb>();
         Orb oSwap = orbSwap.GetComponent<Orb>();
 
@@ -311,6 +322,7 @@ public class GridManager : MonoBehaviour
 
     IEnumerator MoveObject(GameObject obj, Vector3 source, Vector3 target, float overTime)
     {
+        
         float startTime = Time.time;
         while (Time.time < startTime + overTime)
         {
@@ -324,19 +336,19 @@ public class GridManager : MonoBehaviour
         bool matchFound = false;
         Debug.Log("Checking match");
         HashSet<GameObject> matchedTiles = new HashSet<GameObject>();
-        for(int i = 0; i < row; i++)
+        for (int i = 0; i < row; i++)
         {
-            for(int j = 0; j < col; j++)
+            for (int j = 0; j < col; j++)
             {
 
                 Orb o = grid[i, j].GetComponent<Orb>();
                 Orb.OrbType type = o.orbType;
-                if(o.orbType == Orb.OrbType.Ally)
+                if (o.orbType == Orb.OrbType.Ally)
                 {
                     continue;
                 }
                 List<GameObject> horizontalMatches = FindColumnMatchForTile(i, j, type);
-                if(horizontalMatches.Count >= 2)
+                if (horizontalMatches.Count >= 2)
                 {
                     Debug.Log("Orbtype being added: " + o.orbType);
                     matchedTiles.UnionWith(horizontalMatches);
@@ -345,7 +357,7 @@ public class GridManager : MonoBehaviour
                     matchFound = true;
                 }
                 List<GameObject> verticalMatches = FindRowMatchForTile(i, j, type);
-                if(verticalMatches.Count >= 2)
+                if (verticalMatches.Count >= 2)
                 {
                     Debug.Log("Orbtype being added: " + o.orbType);
 
@@ -354,14 +366,18 @@ public class GridManager : MonoBehaviour
                     matchedTiles.Add(grid[i, j]);
                     matchFound = true;
                 }
-                
+
 
             }
         }
         if (matchFound)
         {
+            float pitchLevel = 1;
             foreach (GameObject g in matchedTiles)
             {
+                matchSound.pitch = pitchLevel;
+                pitchLevel += 0.2f;
+                matchSound.Play();
                 Orb matched = g.GetComponent<Orb>();
 
                 //Debug.Log("Destroying object: " + g.name + " at " + g.transform.position);
@@ -376,17 +392,25 @@ public class GridManager : MonoBehaviour
                 switch (matched.orbType)
                 {
                     case Orb.OrbType.Attack:
+                        GameObject atkvfx = ObjectPooler.Instance.SpawnFromPool("AttackFX", g.transform.position, Quaternion.identity);
+                        StartCoroutine(Despawn(atkvfx));
                         yield return Attack(selectedAlly.GetComponent<Ally>().attack);
                         break;
                     case Orb.OrbType.Enemy:
+                        GameObject enemyvfx = ObjectPooler.Instance.SpawnFromPool("EmptyScreenShake", g.transform.position, Quaternion.identity);
+                        StartCoroutine(Despawn(enemyvfx));
                         yield return new WaitForSeconds(0.2f);
                         enemyAttacks.Remove(g);
                         break;
                     case Orb.OrbType.Heal:
+                        GameObject healvfx = ObjectPooler.Instance.SpawnFromPool("HealFX", g.transform.position, Quaternion.identity);
                         Debug.Log("Heal?: " + selectedAlly.name);
+                        StartCoroutine(Despawn(healvfx));
                         yield return Heal(selectedAlly);
                         break;
                     case Orb.OrbType.Talk:
+                        GameObject talkvfx = ObjectPooler.Instance.SpawnFromPool("TalkFX", g.transform.position, Quaternion.identity);
+                        StartCoroutine(Despawn(talkvfx));
                         yield return Talk(selectedAlly.GetComponent<Ally>().charisma);
                         break;
 
@@ -395,13 +419,19 @@ public class GridManager : MonoBehaviour
                 g.SetActive(false);
                 Debug.Log("Matched tiles size: " + matchedTiles.Count);
             }
-            foreach(GameObject g in matchedTiles)
+            foreach (GameObject g in matchedTiles)
             {
                 g.SetActive(false);
             }
             matchedTiles.Clear();
             //matchFound = false;
         }
+    }
+    private IEnumerator Despawn(GameObject fx)
+    {
+        yield return new WaitForSeconds(1f);
+        Debug.Log("FX " + fx.name + " despawning");
+        fx.SetActive(false);
     }
     private IEnumerator Attack(float attack)
     {
@@ -416,7 +446,10 @@ public class GridManager : MonoBehaviour
     private IEnumerator Heal(GameObject g)
     {
         Debug.Log(selectedAlly.name + " is being healed");
-        selectedAlly.GetComponent<Ally>().GainHealth();
+        Ally ally = selectedAlly.GetComponent<Ally>();
+        ally.GainHealth();
+        aInfo.SetValues(ally);
+        
         Debug.Log("Heal initiated");
         yield return characterFlash(selectedAlly, Color.green);
     }
@@ -509,6 +542,7 @@ public class GridManager : MonoBehaviour
                 {
                     //Debug.Log("Empty space detected: " + i + ", " + j);
                     yield return Skyfall(i, j);
+                    
                     break;
                     
 
@@ -544,12 +578,17 @@ public class GridManager : MonoBehaviour
         {
             for (int y = yStart; y < col - 1; y++)
             {
-
+                if(grid[x,y] != emptyOrb)
+                {
+                    continue;
+                }
                 GameObject falling = grid[x, y + 1];
                 Vector3 dropDown = falling.transform.position - new Vector3(0, tileSize, 0);
                 grid[x, y + 1] = emptyOrb;
                 falling.GetComponent<Orb>().SetPosition(x, y);
+                
                 yield return (MoveObject(falling, falling.transform.position, dropDown, 0.05f));
+                
                 grid[x, y] = falling;
                 yield return new WaitForSeconds(0.1f);
 
@@ -649,7 +688,7 @@ public class GridManager : MonoBehaviour
 
             if (hit.transform.gameObject.CompareTag("Ally"))
             {
-                
+                tapSound.Play();
                 selectedAlly = hit.transform.gameObject;
                 Ally ally = selectedAlly.GetComponent<Ally>();
                 Debug.Log("Ally selected: ally movestate - " + ally.moveState);
@@ -709,8 +748,10 @@ public class GridManager : MonoBehaviour
             }
             else if (hit.transform.gameObject.CompareTag("Enemy"))
             {
+                tapSound.Play();
+
                 //if enemy was last selected
-                if(hit.transform.gameObject == lastSelected)
+                if (hit.transform.gameObject == lastSelected)
                 {
                     Debug.Log("Selecting enemy that was already selected, not showing enemy attack range.");
                     enemyIndicator.SetActive(false);
@@ -810,6 +851,8 @@ public class GridManager : MonoBehaviour
         int count = 0;
         while(count < 2)
         {
+            croak.pitch = Random.Range(0.5f, 1.5f);
+            croak.Play();
             int randomX = Random.Range(0, 4);
             int randomY = Random.Range(0, 4);
             if (!grid[randomX, randomY].CompareTag("Ally") && !grid[randomX, randomY].CompareTag("Enemy"))
@@ -828,6 +871,7 @@ public class GridManager : MonoBehaviour
             yield return EnemyAttack(g);
 
         }
+        
         StartPlayerPhase();
         
         
@@ -841,7 +885,13 @@ public class GridManager : MonoBehaviour
         {
             if (grid[pos.x - 1, pos.y].CompareTag("Ally"))
             {
-                grid[pos.x - 1, pos.y].GetComponent<Ally>().TakeDamage();
+                pain.Play();
+                ObjectPooler.Instance.SpawnFromPool("EmptyScreenShake", enemy.transform.position, Quaternion.identity);
+                Ally ally = grid[pos.x - 1, pos.y].GetComponent<Ally>();
+                ally.TakeDamage();
+                allyInfo.GetComponent<AllyInfo>().SetValues(ally);
+                Debug.Log("HP: " + ally.healthBar);
+
                 yield return characterFlash(grid[pos.x - 1, pos.y], Color.red);
             }
         }
@@ -849,7 +899,16 @@ public class GridManager : MonoBehaviour
         {
             if (grid[pos.x + 1, pos.y].CompareTag("Ally"))
             {
-                grid[pos.x + 1, pos.y].GetComponent<Ally>().TakeDamage();
+                pain.Play();
+
+                ObjectPooler.Instance.SpawnFromPool("EmptyScreenShake", enemy.transform.position, Quaternion.identity);
+                Ally ally = grid[pos.x + 1, pos.y].GetComponent<Ally>();
+                ally.TakeDamage();
+                allyInfo.GetComponent<AllyInfo>().SetValues(ally);
+
+                Debug.Log("HP: " + ally.healthBar);
+
+                
                 yield return characterFlash(grid[pos.x + 1, pos.y], Color.red);
 
             }
@@ -859,7 +918,16 @@ public class GridManager : MonoBehaviour
         {
             if (grid[pos.x, pos.y - 1].CompareTag("Ally"))
             {
-                grid[pos.x, pos.y - 1].GetComponent<Ally>().TakeDamage();
+                pain.Play();
+
+                ObjectPooler.Instance.SpawnFromPool("EmptyScreenShake", enemy.transform.position, Quaternion.identity);
+                Ally ally = grid[pos.x, pos.y-1].GetComponent<Ally>();
+                ally.TakeDamage();
+                allyInfo.GetComponent<AllyInfo>().SetValues(ally);
+
+                Debug.Log("HP: " + ally.healthBar);
+
+                
                 yield return characterFlash(grid[pos.x, pos.y - 1], Color.red);
 
             }
@@ -869,11 +937,22 @@ public class GridManager : MonoBehaviour
         {
             if (grid[pos.x, pos.y + 1].CompareTag("Ally"))
             {
-                grid[pos.x, pos.y + 1].GetComponent<Ally>().TakeDamage();
+                pain.Play();
+
+                ObjectPooler.Instance.SpawnFromPool("EmptyScreenShake", enemy.transform.position, Quaternion.identity);
+                Ally ally = grid[pos.x, pos.y+1].GetComponent<Ally>();
+                ally.TakeDamage();
+                allyInfo.GetComponent<AllyInfo>().SetValues(ally);
+
+                Debug.Log("HP: " + ally.healthBar);
+
+                
                 yield return characterFlash(grid[pos.x, pos.y + 1], Color.red);
 
             }
         }
+
+        
         yield return new WaitForSeconds(moveDelay);
     }
 
@@ -937,6 +1016,8 @@ public class GridManager : MonoBehaviour
         {
             Debug.Log("Swap initiating with: " + movementOrbs.Peek().name + " at " + movementOrbs.Peek().transform.position);
             StartCoroutine(SwapOrbs(selectedAlly, movementOrbs.Pop()));
+            
+            
             yield return new WaitForSeconds(moveDelay);
 
         }
@@ -959,14 +1040,26 @@ public class GridManager : MonoBehaviour
         {
             yield return FillRemaining();
         }*/
-
-        if (numberWaiting >= party.Count)
+        foreach (GameObject g in partyInstance.ToArray())
+        {
+            if (g.tag != "Ally")
+            {
+                Debug.Log("Party member removed");
+                partyInstance.Remove(g);
+                if (partyInstance.Count == 0)
+                {
+                    Debug.Log("YOU LOST");
+                }
+            }
+        }
+        if (numberWaiting >= partyInstance.Count)
         {
             Debug.Log("Enemy phase, all allies waiting");
             gamePhase = GamePhase.Enemy;
             yield return EnemyPhase();
             
         }
+
         //FillHoles();
         ResetValues();
 

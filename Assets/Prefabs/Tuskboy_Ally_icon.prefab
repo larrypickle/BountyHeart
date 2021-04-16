@@ -124,19 +124,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   orbType: 3
-  enemySprite: {fileID: 0}
+  enemySprite: {fileID: 21300000, guid: 98ef58fa5e1e7b446a42fffa5fb03e56, type: 3}
+  sprite: {fileID: 0}
   characterName: Tuskboy
-  maxMovement: 3
+  maxMovement: 5
   attack: 2
-  charisma: 2
-  healing: 2
-  maxHp: 5
+  charisma: 1
+  healing: 1
+  maxHp: 3
   waiting: {fileID: 21300000, guid: 568c0c3b9902ba6429b16d2a27c6d265, type: 3}
   ready: {fileID: 21300000, guid: 1985b215d18f27e4db6be5ce998b5934, type: 3}
   portrait: {fileID: 21300000, guid: fe4fad2eb0d8d794bbde1133329fdab5, type: 3}
   healthPoints: 1
   healthBar: {fileID: 8734837138584693525}
+  deathText: 
   moveState: 0
+  orbSprites:
+  - {fileID: 817937506043260565, guid: 3355c0bd3a65d2d44a2ce21cd70f30b2, type: 3}
 --- !u!1001 &635118339223355903
 PrefabInstance:
   m_ObjectHideFlags: 0

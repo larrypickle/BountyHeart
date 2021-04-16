@@ -98,6 +98,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   orbType: 1
   enemySprite: {fileID: 21300000, guid: 98ef58fa5e1e7b446a42fffa5fb03e56, type: 3}
+  sprite: {fileID: 21300000, guid: 53841120fa391f0409783827c6b24b67, type: 3}
 --- !u!61 &3488308277514441901
 BoxCollider2D:
   m_ObjectHideFlags: 0

@@ -25,6 +25,7 @@ public class AllyInfo : MonoBehaviour
     }
     public void SetValues(Ally ally)
     {
+        gameObject.SetActive(true);
         characterName.SetText(ally.characterName);
         hp.SetText("HP: " + ally.healthPoints.ToString("F1") + "/" + ally.maxHp.ToString("F1"));
         attack.SetText("Attack: " + ally.attack.ToString());

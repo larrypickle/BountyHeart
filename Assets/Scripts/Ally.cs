@@ -31,6 +31,7 @@ public class Ally : Orb
     [HideInInspector]
     public moveStates moveState;
     public List<GameObject> orbSprites;
+    private bool isDead;
 
     new private void Start()
     {
@@ -51,6 +52,10 @@ public class Ally : Orb
     }
     public void Ready()
     {
+        if(healthPoints <= 0)
+        {
+            return;
+        }
         this.GetComponent<SpriteRenderer>().sprite = ready;
         this.moveState = moveStates.Unselected;
     }
@@ -94,12 +99,18 @@ public class Ally : Orb
         Debug.Log("Character " + name + "fucking died");
         //FindObjectOfType<Dialogue>().DisplayText(deathText, this.GetComponent<SpriteRenderer>().sprite);
         GameObject orb = orbSprites[Random.Range(0, orbSprites.Count)];
-        
-        this.GetComponent<SpriteRenderer>().sprite = orb.GetComponent<SpriteRenderer>().sprite;
+        ObjectPooler.Instance.SpawnFromPool("DeathFX", gameObject.transform.position, Quaternion.identity);
+        this.GetComponent<SpriteRenderer>().sprite = orb.GetComponent<Orb>().sprite;
         this.orbType = orb.GetComponent<Orb>().orbType;
         this.tag = "Untagged";
+        this.gameObject.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+        isDead = true;
     }
     
+    public bool dead()
+    {
+        return isDead;
+    }
     
 
 }

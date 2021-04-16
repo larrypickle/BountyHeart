@@ -124,10 +124,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   orbType: 3
-  enemySprite: {fileID: 0}
+  enemySprite: {fileID: 21300000, guid: 98ef58fa5e1e7b446a42fffa5fb03e56, type: 3}
+  sprite: {fileID: 0}
   characterName: Sashimi
   maxMovement: 2
-  attack: 1
+  attack: 10
   charisma: 3
   healing: 3
   maxHp: 8
@@ -136,7 +137,10 @@ MonoBehaviour:
   portrait: {fileID: 21300000, guid: 21673dbf948c7f94dabd6e1bc8bf1758, type: 3}
   healthPoints: 3
   healthBar: {fileID: 7619188142284654302}
+  deathText: 
   moveState: 0
+  orbSprites:
+  - {fileID: 817937506043260565, guid: 3355c0bd3a65d2d44a2ce21cd70f30b2, type: 3}
 --- !u!1001 &1753254740868377652
 PrefabInstance:
   m_ObjectHideFlags: 0

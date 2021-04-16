@@ -3,14 +3,16 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using TMPro;
+using UnityEngine.UI;
 
 public class Dialogue : MonoBehaviour, IPointerDownHandler
 {
     public TextMeshProUGUI dialogue;
+    public GameObject portrait;
     // Start is called before the first frame update
     void Start()
     {
-        gameObject.SetActive(false);
+        //gameObject.SetActive(false);
     }
 
     // Update is called once per frame
@@ -27,7 +29,9 @@ public class Dialogue : MonoBehaviour, IPointerDownHandler
 
     public void DisplayText(string text, Sprite speaker)
     {
+        Debug.Log("Dialogue triggered");
         this.gameObject.SetActive(true);
+        portrait.GetComponent<Image>().sprite = speaker;
         dialogue.SetText(text);
     }
     public void CloseDialogueWindow()

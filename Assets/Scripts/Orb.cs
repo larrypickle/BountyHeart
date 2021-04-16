@@ -21,6 +21,7 @@ public class Orb : MonoBehaviour
     [HideInInspector]
     protected Vector2Int position;
     public Sprite enemySprite;
+    public Sprite sprite;
 
     protected void Start()
     {
@@ -31,10 +32,7 @@ public class Orb : MonoBehaviour
         return position;
     }
 
-    public void SwapOrbs()
-    {
-
-    }
+    
 
     public void SetPosition(int posX, int posY)
     {

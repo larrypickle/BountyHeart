@@ -27,7 +27,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4198416919278954104}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.5, y: -2105.2568, z: 0}
+  m_LocalPosition: {x: 2.5, y: -3343.2568, z: 0}
   m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -98,6 +98,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   orbType: 5
   enemySprite: {fileID: 0}
+  sprite: {fileID: 0}
 --- !u!61 &7190853797502068286
 BoxCollider2D:
   m_ObjectHideFlags: 0
