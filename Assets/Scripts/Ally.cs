@@ -60,10 +60,10 @@ public class Ally : Orb
         this.moveState = moveStates.Unselected;
     }
 
-    public void TakeDamage()
+    public void TakeDamage(float damage)
     {
         //should return current hp / max hp so that can be applied to the health bar
-        healthPoints--;
+        healthPoints -= damage;
         Vector3 temp = healthBar.transform.localScale;
         temp.x = healthPoints / maxHp;
 
@@ -78,7 +78,7 @@ public class Ally : Orb
     public void GainHealth()
     {
         
-        healthPoints += healing / maxHp;
+        healthPoints += healing;
         if(healthPoints >= maxHp)
         {
             healthPoints = maxHp;

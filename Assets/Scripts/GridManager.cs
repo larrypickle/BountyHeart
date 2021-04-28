@@ -61,6 +61,7 @@ public class GridManager : MonoBehaviour
     public int numAttacks = 3;
     public GameObject gameOverScreen;
     public TextMeshProUGUI gameOverMessage;
+    public float enemyDamage = 10f;
 
     [Header("Orb Matching Effects")]
     public Enemy enemy;
@@ -70,6 +71,8 @@ public class GridManager : MonoBehaviour
     public AudioSource moveSound;
     public AudioSource tapSound;
     public AllyInfo aInfo;
+
+    //public GameObject formUrl;
     // Start is called before the first frame update
     private void Awake()
     {
@@ -397,7 +400,7 @@ public class GridManager : MonoBehaviour
                         yield return Attack(selectedAlly.GetComponent<Ally>().attack);
                         break;
                     case Orb.OrbType.Enemy:
-                        GameObject enemyvfx = ObjectPooler.Instance.SpawnFromPool("EmptyScreenShake", g.transform.position, Quaternion.identity);
+                        GameObject enemyvfx = ObjectPooler.Instance.SpawnFromPool("EnemyDeath", g.transform.position, Quaternion.identity);
                         StartCoroutine(Despawn(enemyvfx));
                         yield return new WaitForSeconds(0.2f);
                         enemyAttacks.Remove(g);
@@ -888,7 +891,7 @@ public class GridManager : MonoBehaviour
                 pain.Play();
                 ObjectPooler.Instance.SpawnFromPool("EmptyScreenShake", enemy.transform.position, Quaternion.identity);
                 Ally ally = grid[pos.x - 1, pos.y].GetComponent<Ally>();
-                ally.TakeDamage();
+                ally.TakeDamage(enemyDamage);
                 allyInfo.GetComponent<AllyInfo>().SetValues(ally);
                 Debug.Log("HP: " + ally.healthBar);
 
@@ -903,7 +906,7 @@ public class GridManager : MonoBehaviour
 
                 ObjectPooler.Instance.SpawnFromPool("EmptyScreenShake", enemy.transform.position, Quaternion.identity);
                 Ally ally = grid[pos.x + 1, pos.y].GetComponent<Ally>();
-                ally.TakeDamage();
+                ally.TakeDamage(enemyDamage);
                 allyInfo.GetComponent<AllyInfo>().SetValues(ally);
 
                 Debug.Log("HP: " + ally.healthBar);
@@ -922,7 +925,7 @@ public class GridManager : MonoBehaviour
 
                 ObjectPooler.Instance.SpawnFromPool("EmptyScreenShake", enemy.transform.position, Quaternion.identity);
                 Ally ally = grid[pos.x, pos.y-1].GetComponent<Ally>();
-                ally.TakeDamage();
+                ally.TakeDamage(enemyDamage);
                 allyInfo.GetComponent<AllyInfo>().SetValues(ally);
 
                 Debug.Log("HP: " + ally.healthBar);
@@ -941,7 +944,7 @@ public class GridManager : MonoBehaviour
 
                 ObjectPooler.Instance.SpawnFromPool("EmptyScreenShake", enemy.transform.position, Quaternion.identity);
                 Ally ally = grid[pos.x, pos.y+1].GetComponent<Ally>();
-                ally.TakeDamage();
+                ally.TakeDamage(enemyDamage);
                 allyInfo.GetComponent<AllyInfo>().SetValues(ally);
 
                 Debug.Log("HP: " + ally.healthBar);

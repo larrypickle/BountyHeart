@@ -27,7 +27,7 @@ public class AllyInfo : MonoBehaviour
     {
         gameObject.SetActive(true);
         characterName.SetText(ally.characterName);
-        hp.SetText("HP: " + ally.healthPoints.ToString("F1") + "/" + ally.maxHp.ToString("F1"));
+        hp.SetText("HP: " + ally.healthPoints.ToString("F0") + "/" + ally.maxHp.ToString("F0"));
         attack.SetText("Attack: " + ally.attack.ToString());
         charisma.SetText("Charisma: " + ally.charisma.ToString());
         healing.SetText("Healing: " + ally.healing.ToString());
