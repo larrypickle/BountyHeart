@@ -72,6 +72,9 @@ public class GridManager : MonoBehaviour
     public AudioSource tapSound;
     public AllyInfo aInfo;
 
+    //janky code :C
+    private bool matchFound_;
+
     //public GameObject formUrl;
     // Start is called before the first frame update
     private void Awake()
@@ -93,8 +96,11 @@ public class GridManager : MonoBehaviour
         selectedAllyCursorInstance = (GameObject)Instantiate(selectedAllyCursor);
         selectedAllyCursorInstance.SetActive(false);
         arrowIndicators = new Stack<GameObject>();
-    }
-    void Start()
+        
+        matchFound_ = false;
+
+}
+void Start()
     {
         ResetValues();
         CreateGrid();
@@ -426,6 +432,7 @@ public class GridManager : MonoBehaviour
             {
                 g.SetActive(false);
             }
+            matchFound_ = true;
             matchedTiles.Clear();
             //matchFound = false;
         }
@@ -537,7 +544,8 @@ public class GridManager : MonoBehaviour
             }
         }*/
         //Debug.Log("Filling holes");
-        for(int i = 0; i < row; i++)
+        //triggers the skyfalls here
+        for (int i = 0; i < row; i++)
         {
             for(int j = 0; j < col; j++)
             {
@@ -554,7 +562,7 @@ public class GridManager : MonoBehaviour
         }
         //StartCoroutine(FillRemaining());
 
-        //FillRemaining();
+        
     }
     private IEnumerator Skyfall(int x, int yStart)
     {
@@ -641,6 +649,8 @@ public class GridManager : MonoBehaviour
             //grid[i, j + 1] = emptyOrb;
         }
 
+        
+
     }
 
     private IEnumerator FillRemaining()
@@ -676,6 +686,16 @@ public class GridManager : MonoBehaviour
             }
             
         }
+        
+        // BRANCH - testing skyfall's triggering DELETE THIS TO REVERT
+        yield return CheckMatch();
+        if (matchFound_)
+        {
+            matchFound_ = false;
+            yield return FillRemaining();
+        }
+
+
 
     }
 
@@ -807,6 +827,7 @@ public class GridManager : MonoBehaviour
             arrowIndicators.Push(ai);
             lastSelected = move_Orbs;
 
+            //StartCoroutine(SwapOrbs(selectedAlly, move_Orbs));
         }
         else if(movementOrbs.Contains(move_Orbs))
         {
@@ -839,16 +860,95 @@ public class GridManager : MonoBehaviour
                 lastSelected = move_Orbs;
             }
         }*/
-        
+
         stepsLeft.SetText(tilesMoved.ToString());
 
         //Debug.Log("tiles moved: " + tilesMoved);
 
     }
 
+    private IEnumerator ExecuteMove()
+    {
+        Debug.Log("Executing move of size " + movementOrbs.Count);
+        if (movementOrbs.Count < 2)
+        {
+            ResetValues();
+            yield break;
+        }
+        else if (movementOrbs.Count == 2 && movementOrbs.Peek() == selectedAlly)
+        {
+            ResetValues();
+            yield break;
+        }
+        //movementOrbs.
+
+        //IEnumerator<GameObject> enumerator = movementOrbs.GetEnumerator();
+        ReverseStack();
+        moving = true;
+        while (movementOrbs.Count > 0)
+        {
+            Debug.Log("Swap initiating with: " + movementOrbs.Peek().name + " at " + movementOrbs.Peek().transform.position);
+            StartCoroutine(SwapOrbs(selectedAlly, movementOrbs.Pop()));
+
+
+            yield return new WaitForSeconds(moveDelay);
+
+        }
+
+        //CheckMatch();
+        //reset all conditions
+        foreach (GameObject g in arrowIndicators)
+        {
+            g.SetActive(false);
+        }
+        Ally a = selectedAlly.GetComponent<Ally>();
+        a.moveState = Ally.moveStates.Wait;
+        numberWaiting++;
+        a.Wait();
+
+        yield return CheckMatch();
+        yield return FillRemaining();
+
+        /*if (CheckMatch())
+        {
+            yield return FillRemaining();
+        }*/
+        foreach (GameObject g in partyInstance.ToArray())
+        {
+            if (g.tag != "Ally")
+            {
+                Debug.Log("Party member removed");
+                partyInstance.Remove(g);
+                if (partyInstance.Count == 0)
+                {
+                    Debug.Log("YOU LOST");
+                }
+            }
+        }
+        if (numberWaiting >= partyInstance.Count)
+        {
+            Debug.Log("Enemy phase, all allies waiting");
+            gamePhase = GamePhase.Enemy;
+            yield return EnemyPhase();
+
+        }
+
+        //FillHoles();
+        ResetValues();
+
+
+    }
+
     private IEnumerator EnemyPhase()
     {
         Debug.Log("Enemy phase started");
+
+        foreach (GameObject g in enemyAttacks)
+        {
+            Debug.Log("Enemy Attack initiating");
+            yield return EnemyAttack(g);
+
+        }
         gamePhase = GamePhase.Enemy;
         
         int count = 0;
@@ -868,12 +968,7 @@ public class GridManager : MonoBehaviour
                 yield return new WaitForSeconds(moveDelay);
             }
         }
-        foreach (GameObject g in enemyAttacks)
-        {
-            Debug.Log("Enemy Attack initiating");
-            yield return EnemyAttack(g);
-
-        }
+        
         
         StartPlayerPhase();
         
@@ -998,76 +1093,7 @@ public class GridManager : MonoBehaviour
         }
         return;
     }
-    private IEnumerator ExecuteMove()
-    {
-        Debug.Log("Executing move of size " + movementOrbs.Count);
-        if(movementOrbs.Count < 2)
-        {
-            ResetValues();
-            yield break;
-        }
-        else if(movementOrbs.Count == 2 && movementOrbs.Peek() == selectedAlly)
-        {
-            ResetValues();
-            yield break;
-        }
-        //movementOrbs.
-        ReverseStack();
-        //IEnumerator<GameObject> enumerator = movementOrbs.GetEnumerator();
-        moving = true;
-        while (movementOrbs.Count > 0)
-        {
-            Debug.Log("Swap initiating with: " + movementOrbs.Peek().name + " at " + movementOrbs.Peek().transform.position);
-            StartCoroutine(SwapOrbs(selectedAlly, movementOrbs.Pop()));
-            
-            
-            yield return new WaitForSeconds(moveDelay);
-
-        }
-        
-        //CheckMatch();
-        //reset all conditions
-        foreach (GameObject g in arrowIndicators)
-        {
-            g.SetActive(false);
-        }
-        Ally a = selectedAlly.GetComponent<Ally>();
-        a.moveState = Ally.moveStates.Wait;
-        numberWaiting++;
-        a.Wait();
-
-        yield return CheckMatch();
-        yield return FillRemaining();
-
-        /*if (CheckMatch())
-        {
-            yield return FillRemaining();
-        }*/
-        foreach (GameObject g in partyInstance.ToArray())
-        {
-            if (g.tag != "Ally")
-            {
-                Debug.Log("Party member removed");
-                partyInstance.Remove(g);
-                if (partyInstance.Count == 0)
-                {
-                    Debug.Log("YOU LOST");
-                }
-            }
-        }
-        if (numberWaiting >= partyInstance.Count)
-        {
-            Debug.Log("Enemy phase, all allies waiting");
-            gamePhase = GamePhase.Enemy;
-            yield return EnemyPhase();
-            
-        }
-
-        //FillHoles();
-        ResetValues();
-
-
-    }
+   
     private void ReverseStack()
     {
         Stack<GameObject> rev = new Stack<GameObject>();
