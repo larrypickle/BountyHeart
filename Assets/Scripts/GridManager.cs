@@ -177,7 +177,7 @@ void Start()
                                 {
                                     if (isNeighbour(move_Orbs, movementOrbs.Peek()))
                                     {
-                                        buildMove(move_Orbs);
+                                        StartCoroutine(buildMove(move_Orbs));
                                     }
                                 }
 
@@ -791,7 +791,7 @@ void Start()
             }
         }
     }
-    private void buildMove(GameObject move_Orbs)
+    private IEnumerator buildMove(GameObject move_Orbs)
     {
         //CHANGE THIS 
         //should add positions to a list and then go thru that list of positions to change rather than going thru the actual gameobjects
@@ -827,7 +827,7 @@ void Start()
             arrowIndicators.Push(ai);
             lastSelected = move_Orbs;
 
-            //StartCoroutine(SwapOrbs(selectedAlly, move_Orbs));
+            yield return SwapOrbs(selectedAlly, move_Orbs);
         }
         else if(movementOrbs.Contains(move_Orbs))
         {
@@ -885,7 +885,7 @@ void Start()
         //IEnumerator<GameObject> enumerator = movementOrbs.GetEnumerator();
         ReverseStack();
         moving = true;
-        while (movementOrbs.Count > 0)
+        /*while (movementOrbs.Count > 0)
         {
             Debug.Log("Swap initiating with: " + movementOrbs.Peek().name + " at " + movementOrbs.Peek().transform.position);
             StartCoroutine(SwapOrbs(selectedAlly, movementOrbs.Pop()));
@@ -893,7 +893,7 @@ void Start()
 
             yield return new WaitForSeconds(moveDelay);
 
-        }
+        }*/
 
         //CheckMatch();
         //reset all conditions

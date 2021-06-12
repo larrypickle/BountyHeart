@@ -127,7 +127,7 @@ MonoBehaviour:
   enemySprite: {fileID: 21300000, guid: 98ef58fa5e1e7b446a42fffa5fb03e56, type: 3}
   sprite: {fileID: 0}
   characterName: Sashimi
-  maxMovement: 2
+  maxMovement: 4
   attack: 1
   charisma: 3
   healing: 3
