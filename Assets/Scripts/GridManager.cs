@@ -74,6 +74,7 @@ public class GridManager : MonoBehaviour
 
     //janky code :C
     private bool matchFound_;
+    private bool isSwapping;
 
     //public GameObject formUrl;
     // Start is called before the first frame update
@@ -97,10 +98,13 @@ public class GridManager : MonoBehaviour
         selectedAllyCursorInstance.SetActive(false);
         arrowIndicators = new Stack<GameObject>();
         
+        //new changes
         matchFound_ = false;
+        isSwapping = false;
 
-}
-void Start()
+
+    }
+    void Start()
     {
         ResetValues();
         CreateGrid();
@@ -116,92 +120,100 @@ void Start()
     {
         //Debug.Log("game" + gamePhase);
         //if there is a touch
-        if (!moving)
+        //if (!moving)
+        //{
+        if (Input.GetMouseButtonDown(0))
         {
-            if (Input.GetMouseButtonDown(0))
+            //place ur party TODO DOESNT WORK
+            /*if(gamePhase == GamePhase.Start)
             {
-                //place ur party TODO DOESNT WORK
-                /*if(gamePhase == GamePhase.Start)
+
+                //Touch touch = Input.GetTouch(0);
+                Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+                RaycastHit hit;
+                //raycast isnt hitting anything
+                //TODO
+                Debug.Log("alliesplaced: " + alliesPlaced + "party Count " + party.Count);
+                if (Physics.Raycast(ray, out hit) && alliesPlaced <= party.Count)
                 {
-
-                    //Touch touch = Input.GetTouch(0);
-                    Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-                    RaycastHit hit;
-                    //raycast isnt hitting anything
-                    //TODO
-                    Debug.Log("alliesplaced: " + alliesPlaced + "party Count " + party.Count);
-                    if (Physics.Raycast(ray, out hit) && alliesPlaced <= party.Count)
-                    {
-                        Debug.Log("touch registered: " + gamePhase);
-                        GameObject replacedOrb = hit.transform.gameObject;
-                        PlaceParty(replacedOrb);
-                        alliesPlaced++;
-                    }
-
-
-                    gamePhase = GamePhase.Player;
-
-                }*/
-                //move ur party
-                if (gamePhase == GamePhase.Player && movementOrbs.Count <= 1)
-                {
-                    //Debug.Log("Player phase");
-                    //the first tap on screen
-                    //Touch touch = Input.GetTouch(0);
-
-                    TapToSelect(Input.mousePosition);
-
-
-
+                    Debug.Log("touch registered: " + gamePhase);
+                    GameObject replacedOrb = hit.transform.gameObject;
+                    PlaceParty(replacedOrb);
+                    alliesPlaced++;
                 }
+
+
+                gamePhase = GamePhase.Player;
+
+            }*/
+            //move ur party
+            if (gamePhase == GamePhase.Player)
+            {
+                //Debug.Log("Player phase");
+                //the first tap on screen
+                //Touch touch = Input.GetTouch(0);
+
+                TapToSelect(Input.mousePosition);
+
+
 
             }
 
-            if (characterSelected)
-            {
-                if (gamePhase == GamePhase.Player)
-                {
-                    Ally ally = selectedAlly.GetComponent<Ally>();
-                    if (ally.moveState == Ally.moveStates.Selected)
-                    {
-                        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-                        RaycastHit2D hit = Physics2D.Raycast(ray.origin, Vector2.zero, Mathf.Infinity);
-                        //store all the tiles 
-                        if (hit)
-                        {
-                            GameObject move_Orbs = hit.transform.gameObject;
-                            if (move_Orbs != lastSelected)
-                            {
-                                //only build move when the tile ur finger is on is a different one
-                                if (movementOrbs.Peek() != null)
-                                {
-                                    if (isNeighbour(move_Orbs, movementOrbs.Peek()))
-                                    {
-                                        StartCoroutine(buildMove(move_Orbs));
-                                    }
-                                }
+        }
 
+        if (characterSelected)
+        {
+            if (gamePhase == GamePhase.Player)
+            {
+                Ally ally = selectedAlly.GetComponent<Ally>();
+                if (ally.moveState == Ally.moveStates.Selected)
+                {
+                    Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+                    RaycastHit2D hit = Physics2D.Raycast(ray.origin, Vector2.zero, Mathf.Infinity);
+                    //store all the tiles 
+                    if (hit && !isSwapping)
+                    {
+                        //Debug.Log("No longer swapping");
+                        GameObject move_Orbs = hit.transform.gameObject;
+                        if (move_Orbs != lastSelected)
+                        {
+                            //only build move when the tile ur finger is on is a different one
+                            if(isNeighbour(move_Orbs, selectedAlly))
+                            {
+                                StartCoroutine(buildMove(move_Orbs));
 
                             }
+
+
+
 
                         }
 
                     }
+
+                    if(Input.GetMouseButtonUp(1) && movementOrbs.Count > 1 && !isSwapping)
+                    {
+                        StartCoroutine(CancelMove());
+                    }
+
                 }
+
 
             }
 
-            if (Input.GetMouseButtonUp(0) && movementOrbs.Count > 1)
-            {
-                if (gamePhase == GamePhase.Player)
-                {
-                    Debug.Log("Move executed");
-
-                    StartCoroutine(ExecuteMove());
-                }
-
-            }
         }
+
+        /*if (Input.GetMouseButtonUp(0) && movementOrbs.Count > 1)
+        {
+            if (gamePhase == GamePhase.Player)
+            {
+                Debug.Log("Move executed");
+
+                StartCoroutine(ExecuteMove());
+            }
+
+        }*/
+        //}
 
     }
 
@@ -295,6 +307,7 @@ void Start()
 
     public IEnumerator SwapOrbs(GameObject orb, GameObject orbSwap)
     {
+        isSwapping = true;
         if (!moveSound.isPlaying)
         {
             moveSound.pitch = Random.Range(0.8f, 1.2f);
@@ -317,14 +330,18 @@ void Start()
 
         Vector3 tempPosition = orb.transform.position;
         //orb.transform.position = orbSwap.transform.position;
-        StartCoroutine(MoveObject(orb, orb.transform.position, orbSwap.transform.position, moveDelay));
-        StartCoroutine(MoveObject(orbSwap, orbSwap.transform.position, tempPosition, moveDelay));
+        //StartCoroutine(MoveObject(orb, orb.transform.position, orbSwap.transform.position, moveDelay));
+        //StartCoroutine(MoveObject(orbSwap, orbSwap.transform.position, tempPosition, moveDelay));
+
+        yield return MoveObject(orb, orb.transform.position, orbSwap.transform.position, moveDelay);
+        yield return MoveObject(orbSwap, orbSwap.transform.position, tempPosition, moveDelay);
 
         //orbSwap.transform.position = tempPosition;
-        //Debug.Log("Swapping orbs | after swap | orb 1 " + orb.name + "position: " + o.getPosition() + " orb 2 " + orbSwap.name + "position: " + oSwap.getPosition());
+        Debug.Log("Swapping orbs | after swap | orb 1 " + orb.name + "position: " + o.getPosition() + " orb 2 " + orbSwap.name + "position: " + oSwap.getPosition());
         //CheckMatch();
-        yield return null;
 
+        isSwapping = false;
+        
 
 
     }
@@ -763,6 +780,10 @@ void Start()
                         stepsLeft.SetText("");
                         selectedAllyCursorInstance.SetActive(false);
                         allyInfo.SetActive(false);
+                        if(movementOrbs.Count > 0)
+                        {
+                            StartCoroutine(ExecuteMove());
+                        }
 
                     }
                     lastSelected = selectedAlly;
@@ -798,7 +819,7 @@ void Start()
         //Orb o = move_Orbs.GetComponent<Orb>();
 
         //if its not already a move
-        if (!movementOrbs.Contains(move_Orbs) && tilesMoved > 0)
+        if (move_Orbs != selectedAlly && tilesMoved > 0)
         {
             //to calculate what the rotation of the arrow should be
             GameObject lastMoveOrb = movementOrbs.Peek();
@@ -829,7 +850,7 @@ void Start()
 
             yield return SwapOrbs(selectedAlly, move_Orbs);
         }
-        else if(movementOrbs.Contains(move_Orbs))
+        /*else if(movementOrbs.Contains(move_Orbs))
         {
 
             //Debug.Log("Build move removing: " + move_Orbs.name + "at " + move_Orbs.transform.position);
@@ -837,7 +858,7 @@ void Start()
             tilesMoved += 1;
             arrowIndicators.Pop().SetActive(false);
             lastSelected = move_Orbs;
-        }
+        }*/
 
         /*else if(move_Orbs == selectedAlly && tilesMoved > 0)
         {
@@ -870,7 +891,7 @@ void Start()
     private IEnumerator ExecuteMove()
     {
         Debug.Log("Executing move of size " + movementOrbs.Count);
-        if (movementOrbs.Count < 2)
+        /*if (movementOrbs.Count < 2)
         {
             ResetValues();
             yield break;
@@ -879,12 +900,12 @@ void Start()
         {
             ResetValues();
             yield break;
-        }
+        }*/
         //movementOrbs.
 
         //IEnumerator<GameObject> enumerator = movementOrbs.GetEnumerator();
-        ReverseStack();
-        moving = true;
+        //ReverseStack();
+        //moving = true;
         /*while (movementOrbs.Count > 0)
         {
             Debug.Log("Swap initiating with: " + movementOrbs.Peek().name + " at " + movementOrbs.Peek().transform.position);
@@ -938,6 +959,26 @@ void Start()
 
 
     }
+
+    private IEnumerator CancelMove()
+    {
+        foreach (GameObject g in arrowIndicators)
+        {
+            g.SetActive(false);
+        }
+        while (movementOrbs.Count > 0)
+        {
+            Debug.Log("Swap initiating with: " + movementOrbs.Peek().name + " at " + movementOrbs.Peek().transform.position);
+            //StartCoroutine(SwapOrbs(selectedAlly, movementOrbs.Pop()));
+            yield return SwapOrbs(selectedAlly, movementOrbs.Pop());
+
+            //yield return new WaitForSeconds(moveDelay);
+
+        }
+        ResetValues();
+
+    }
+
 
     private IEnumerator EnemyPhase()
     {
@@ -1105,6 +1146,7 @@ void Start()
 }
     private void ResetValues()
     {
+        Debug.Log("Resetting Values");
         moving = false;
         lastSelected = null;
         selectedAllyCursorInstance.SetActive(false);
