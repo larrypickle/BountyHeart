@@ -127,11 +127,11 @@ MonoBehaviour:
   enemySprite: {fileID: 21300000, guid: 98ef58fa5e1e7b446a42fffa5fb03e56, type: 3}
   sprite: {fileID: 0}
   characterName: Tuskboy
-  maxMovement: 5
-  attack: 2
+  maxMovement: 8
+  attack: 3
   charisma: 1
   healing: 1
-  maxHp: 15
+  maxHp: 20
   waiting: {fileID: 21300000, guid: 568c0c3b9902ba6429b16d2a27c6d265, type: 3}
   ready: {fileID: 21300000, guid: 1985b215d18f27e4db6be5ce998b5934, type: 3}
   portrait: {fileID: 21300000, guid: fe4fad2eb0d8d794bbde1133329fdab5, type: 3}

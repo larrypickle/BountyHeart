@@ -127,11 +127,11 @@ MonoBehaviour:
   enemySprite: {fileID: 21300000, guid: 98ef58fa5e1e7b446a42fffa5fb03e56, type: 3}
   sprite: {fileID: 0}
   characterName: Toby
-  maxMovement: 3
+  maxMovement: 6
   attack: 2
   charisma: 2
   healing: 2
-  maxHp: 25
+  maxHp: 30
   waiting: {fileID: 21300000, guid: 0222ec8e550bfc2478ae478c8f852f8e, type: 3}
   ready: {fileID: 21300000, guid: 6076a31ce99771041b95674fb6b4352b, type: 3}
   portrait: {fileID: 21300000, guid: 08b780443e8ce2a488e74c3f71368606, type: 3}

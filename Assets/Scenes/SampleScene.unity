@@ -347,8 +347,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   healthBar: {fileID: 1254637610}
   talkBar: {fileID: 1300676699}
-  MaxHP: 30
-  MaxHostility: 40
+  MaxHP: 40
+  MaxHostility: 100
   HPText: {fileID: 1074752824}
   HostilityText: {fileID: 1265654456}
   enterDialogue: What do you want from me?! These are normal mushrooms I swear!   
@@ -2125,7 +2125,7 @@ PrefabInstance:
       objectReference: {fileID: 1491282300}
     - target: {fileID: 9030492606282115735, guid: e83d8e15cc39152499678b8efc8a8dbe, type: 3}
       propertyPath: enemyDamage
-      value: 5
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 9030492606282115735, guid: e83d8e15cc39152499678b8efc8a8dbe, type: 3}
       propertyPath: gameOverScreen
