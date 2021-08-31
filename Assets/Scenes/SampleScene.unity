@@ -347,8 +347,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   healthBar: {fileID: 1254637610}
   talkBar: {fileID: 1300676699}
-  MaxHP: 30
-  MaxHostility: 40
+  MaxHP: 40
+  MaxHostility: 100
   HPText: {fileID: 1074752824}
   HostilityText: {fileID: 1265654456}
   enterDialogue: What do you want from me?! These are normal mushrooms I swear!   

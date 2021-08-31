@@ -369,7 +369,7 @@ public class GridManager : MonoBehaviour
 
                 Orb o = grid[i, j].GetComponent<Orb>();
                 Orb.OrbType type = o.orbType;
-                if (o.orbType == Orb.OrbType.Ally)
+                if (o.orbType == Orb.OrbType.Ally || o.orbType == Orb.OrbType.Empty)
                 {
                     continue;
                 }
@@ -578,8 +578,19 @@ public class GridManager : MonoBehaviour
             }
         }
         //StartCoroutine(FillRemaining());
+        yield return CheckMatch();
+        if (matchFound_)
+        {
+            matchFound_ = false;
+            yield return FillHoles();
+        }
+        else
+        {
+            //yield return FillRemaining();
+            StartCoroutine(FillRemaining());
+        }
 
-        
+
     }
     private IEnumerator Skyfall(int x, int yStart)
     {
@@ -672,7 +683,8 @@ public class GridManager : MonoBehaviour
 
     private IEnumerator FillRemaining()
     {
-        yield return FillHoles();
+        Debug.Log("Filling remaining holes");
+        //yield return FillHoles();
         List<GameObject> orbTemp = new List<GameObject>();
         orbTemp.AddRange(orbList);
 
@@ -705,12 +717,12 @@ public class GridManager : MonoBehaviour
         }
         
         // BRANCH - testing skyfall's triggering DELETE THIS TO REVERT
-        yield return CheckMatch();
+        /*yield return CheckMatch();
         if (matchFound_)
         {
             matchFound_ = false;
             yield return FillRemaining();
-        }
+        }*/
 
 
 
@@ -928,7 +940,11 @@ public class GridManager : MonoBehaviour
         a.Wait();
 
         yield return CheckMatch();
-        yield return FillRemaining();
+        if (matchFound_)
+        {
+            yield return FillHoles();
+
+        }
 
         /*if (CheckMatch())
         {
